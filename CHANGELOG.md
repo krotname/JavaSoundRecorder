@@ -35,6 +35,7 @@
 - Docker image updates added to Dependabot.
 - Governance documentation added for protected branch, required checks, and release accountability.
 - Security policy now links directly to GitHub Security Advisories.
+- Scorecards workflow kept non-blocking for transient external result-publication failures.
 
 ## 1.0.0
 ### Added
