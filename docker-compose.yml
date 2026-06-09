@@ -1,0 +1,13 @@
+services:
+  app:
+    build: .
+    image: javasoundrecorder:local
+    environment:
+      - JAVASOUNDRECORDER_RECORDING_DURATION_MS=15000
+      - JAVASOUNDRECORDER_UPLOAD_ENABLED=false
+      - JAVASOUNDRECORDER_RECORDING_DIRECTORY=/data/recordings
+    volumes:
+      - recordings:/data/recordings
+
+volumes:
+  recordings:
