@@ -35,7 +35,7 @@ jobs:
         run: bash ./mvnw -q verify
       - name: Generate checksums
         run: |
-          > target/checksums.txt
+          : > target/checksums.txt
           for artifact in target/javasoundrecorder-*-all.jar target/javasoundrecorder-*-sbom.json target/javasoundrecorder-*-sbom.xml; do
             [ -e "$artifact" ] || continue
             sha256sum "$artifact" >> target/checksums.txt
@@ -50,8 +50,12 @@ jobs:
       - name: Resolve release artifact paths
         id: artifacts
         run: |
-          jar="$(ls target/javasoundrecorder-*-all.jar | head -n 1)"
-          sbom_json="$(ls target/javasoundrecorder-*-sbom.json | head -n 1)"
+          jar="$(find target -maxdepth 1 -type f -name 'javasoundrecorder-*-all.jar' -print -quit)"
+          sbom_json="$(find target -maxdepth 1 -type f -name 'javasoundrecorder-*-sbom.json' -print -quit)"
+          if [ -z "$jar" ] || [ -z "$sbom_json" ]; then
+            echo "Required release artifact not found."
+            exit 1
+          fi
           echo "jar=$jar" >> "$GITHUB_OUTPUT"
           echo "sbom_json=$sbom_json" >> "$GITHUB_OUTPUT"
       - name: Generate provenance attestations

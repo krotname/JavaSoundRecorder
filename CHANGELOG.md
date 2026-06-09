@@ -27,6 +27,7 @@
 - Dependency policy documentation added with explicit stable-release update rules.
 - Dependabot GitHub Actions update cadence changed to weekly.
 - SpotBugs quality gate added to Maven `verify` and CI static-analysis workflow.
+- Release workflow shell snippets hardened for actionlint/shellcheck compliance.
 
 ## 1.0.0
 ### Added
