@@ -43,3 +43,9 @@ creates checksums, and publishes GitHub artifact attestations before uploading r
 GitHub Actions are pinned to full commit SHAs with the reviewed version kept in a comment.
 Docker image references are pinned by digest. This avoids silent tag retargeting in CI,
 release, and scorecard workflows.
+
+## Maven Wrapper integrity
+
+`.mvn/wrapper/maven-wrapper.properties` pins Maven 3.9.16 and includes the SHA-256
+checksum for the configured Maven distribution zip. Wrapper updates must refresh both
+the URL and checksum in the same review.

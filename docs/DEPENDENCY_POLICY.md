@@ -8,7 +8,7 @@ The baseline favors current stable releases over milestones, betas, snapshots, o
 | Component | Version | Purpose |
 |---|---:|---|
 | Java | 21 | Runtime and compilation target |
-| Maven Wrapper | 3.9.16 | Reproducible Maven runtime for local and CI builds |
+| Maven Wrapper | 3.9.16 | Reproducible Maven runtime with SHA-256 distribution checksum |
 | JUnit Jupiter | 6.1.0 | Test framework |
 | Maven Surefire Plugin | 3.5.6 | JUnit Platform test execution |
 | SLF4J | 2.0.18 | Logging facade and simple runtime binding |
@@ -30,9 +30,10 @@ The baseline favors current stable releases over milestones, betas, snapshots, o
 - Avoid `LATEST`, `RELEASE`, snapshots, alpha, beta, and milestone versions in `pom.xml`.
 - Keep test style in JUnit Jupiter; update tests by behavior, not framework churn.
 - Run `./mvnw -q verify` after dependency changes.
-- Keep Dependabot enabled for Maven and GitHub Actions.
+- Keep Dependabot enabled for Maven, GitHub Actions, and Docker images.
 - Pin GitHub Actions to full commit SHAs and keep the human-readable version in a trailing comment.
 - Pin Docker images by digest; refresh the digest together with the reviewed tag.
+- Keep `.mvn/wrapper/maven-wrapper.properties` distribution checksum in sync with the Maven distribution URL.
 
 ## Manual update check
 

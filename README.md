@@ -142,6 +142,8 @@ This enforces configured line/branch thresholds in `pom.xml`.
 - Maven Wrapper: reproducible local and CI builds via Maven 3.9.16.
 - GitHub Actions hardening: scoped token permissions, job timeouts, concurrency controls, and non-persistent checkout credentials.
 - GitHub Actions are pinned to immutable commit SHAs; Docker images are pinned by digest.
+- Maven Wrapper validates the Maven distribution with a SHA-256 checksum.
+- Default branch governance is documented in `docs/GOVERNANCE.md`.
 - `.github/workflows/codeql.yml`: static security analysis
 - `.github/workflows/scorecard.yml`: OSSF scorecards check for supply-chain posture.
 - `.github/workflows/release.yml`: verified tag releases with checksums, CycloneDX SBOM (JSON/XML), and GitHub artifact attestations.
@@ -159,6 +161,7 @@ This enforces configured line/branch thresholds in `pom.xml`.
 - [`docs/USAGE.md`](docs/USAGE.md)
 - [`docs/TEST_PLAN.md`](docs/TEST_PLAN.md)
 - [`docs/QUALITY.md`](docs/QUALITY.md)
+- [`docs/GOVERNANCE.md`](docs/GOVERNANCE.md)
 - [`docs/DEPENDENCY_POLICY.md`](docs/DEPENDENCY_POLICY.md)
 - [`docs/SUPPLY_CHAIN.md`](docs/SUPPLY_CHAIN.md)
 
@@ -267,6 +270,8 @@ docker run --rm javasoundrecorder
 - Maven Wrapper — воспроизводимая локальная и CI-сборка на Maven 3.9.16.
 - GitHub Actions hardening: ограниченные permissions, timeout для job, concurrency и checkout без сохранения credentials.
 - GitHub Actions закреплены по immutable commit SHA; Docker images закреплены по digest.
+- Maven Wrapper проверяет Maven distribution по SHA-256 checksum.
+- Правила default branch описаны в `docs/GOVERNANCE.md`.
 - `.github/workflows/ci.yml` также запускает `Dependency Review` для pull request.
 - `.github/workflows/codeql.yml` — анализ безопасности.
 - `.github/workflows/scorecard.yml` — OSSF Scorecards для оценки supply-chain-подхода.
@@ -277,4 +282,4 @@ docker run --rm javasoundrecorder
 - `.github/ISSUE_TEMPLATE/` — шаблоны для багов и фич.
 - `CHANGELOG.md`, `CONTRIBUTING.md`, `SECURITY.md`, `CODE_OF_CONDUCT.md`.
 - Лицензия: `LICENSE` (GNU General Public License v3.0).
-- Доп. docs: `docs/ARCHITECTURE.md`, `docs/TEST_PLAN.md`, `docs/USAGE.md`, `docs/QUALITY.md`, `docs/DEPENDENCY_POLICY.md`, `docs/SUPPLY_CHAIN.md`.
+- Доп. docs: `docs/ARCHITECTURE.md`, `docs/TEST_PLAN.md`, `docs/USAGE.md`, `docs/QUALITY.md`, `docs/GOVERNANCE.md`, `docs/DEPENDENCY_POLICY.md`, `docs/SUPPLY_CHAIN.md`.

@@ -13,10 +13,12 @@
 - Bytecode-level bug-pattern analysis is enforced by SpotBugs in the Maven `verify` lifecycle.
 - GitHub Actions workflow syntax and expressions are checked by `.github/workflows/actionlint.yml`.
 - Maven Wrapper pins Maven 3.9.16 for reproducible local and CI execution.
+- Maven Wrapper validates the Maven distribution with a SHA-256 checksum.
 - Security checks include dependency analysis and `CodeQL` workflow.
 - Pull request dependency policy is enforced by `dependency-review` in CI.
 - Workflows use least-privilege permissions, explicit timeouts, concurrency control, and non-persistent checkout credentials.
 - Workflow actions are pinned to immutable commit SHAs and container images are pinned by digest.
+- Default branch governance and required checks are documented in `docs/GOVERNANCE.md`.
 - Current stable dependency baseline and update rules are documented in `docs/DEPENDENCY_POLICY.md`.
 - Supply-chain posture is additionally analyzed by OSSF Scorecards workflow.
 - Release automation is in `.github/workflows/release.yml` with full Maven verification, checksums, and artifact attestations.
@@ -37,6 +39,7 @@
 ### Operational evidence
 - Deterministic dependency update proposal via Dependabot.
 - Weekly update tracking for Maven dependencies and GitHub Actions.
+- Weekly update tracking for Docker images through Dependabot.
 - Structured contribution flow (`.github/PULL_REQUEST_TEMPLATE.md`).
 - Bug + feature issue templates under `.github/ISSUE_TEMPLATE`.
 - Automated coverage threshold enforcement through JaCoCo in Maven lifecycle.

@@ -9,6 +9,8 @@ Report vulnerabilities through GitHub Security advisories with:
 - Steps to reproduce
 - Proof of impact
 
+Advisory entrypoint: https://github.com/krotname/JavaSoundRecorder/security/advisories/new
+
 For suspected credential leakage:
 - Remove exposed secrets from history and rotate them immediately.
 - Revoke API tokens in the provider console.
@@ -19,6 +21,7 @@ For suspected credential leakage:
 - CI includes SpotBugs, CodeQL, OSSF Scorecards, and dependency-review on pull requests.
 - GitHub Actions workflows use scoped token permissions, explicit job timeouts, and non-persistent checkout credentials.
 - GitHub Actions workflow files are linted with actionlint before merge.
+- Default branch governance and required checks are documented in `docs/GOVERNANCE.md`.
 - SBOM is generated during package/release and versioned as `javasoundrecorder-1.0.0-sbom.json/xml`.
 - Release artifacts include SHA-256 checksums and GitHub artifact attestations for provenance and SBOM verification.
 
