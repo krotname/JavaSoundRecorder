@@ -30,6 +30,7 @@
 - Release workflow shell snippets hardened for actionlint/shellcheck compliance.
 - GitHub Actions pinned to immutable commit SHAs and Docker images pinned by digest.
 - Repository security settings enabled for Dependabot security updates and secret scanning.
+- Release checksums now use downloadable asset basenames for direct verification.
 
 ## 1.0.0
 ### Added
