@@ -28,6 +28,8 @@
 - Dependabot GitHub Actions update cadence changed to weekly.
 - SpotBugs quality gate added to Maven `verify` and CI static-analysis workflow.
 - Release workflow shell snippets hardened for actionlint/shellcheck compliance.
+- GitHub Actions pinned to immutable commit SHAs and Docker images pinned by digest.
+- Repository security settings enabled for Dependabot security updates and secret scanning.
 
 ## 1.0.0
 ### Added

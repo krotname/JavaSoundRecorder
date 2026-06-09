@@ -141,6 +141,7 @@ This enforces configured line/branch thresholds in `pom.xml`.
 - `.github/workflows/actionlint.yml`: static validation for GitHub Actions workflow files.
 - Maven Wrapper: reproducible local and CI builds via Maven 3.9.16.
 - GitHub Actions hardening: scoped token permissions, job timeouts, concurrency controls, and non-persistent checkout credentials.
+- GitHub Actions are pinned to immutable commit SHAs; Docker images are pinned by digest.
 - `.github/workflows/codeql.yml`: static security analysis
 - `.github/workflows/scorecard.yml`: OSSF scorecards check for supply-chain posture.
 - `.github/workflows/release.yml`: verified tag releases with checksums, CycloneDX SBOM (JSON/XML), and GitHub artifact attestations.
@@ -265,6 +266,7 @@ docker run --rm javasoundrecorder
 - `.github/workflows/actionlint.yml` — статическая проверка GitHub Actions workflow-файлов.
 - Maven Wrapper — воспроизводимая локальная и CI-сборка на Maven 3.9.16.
 - GitHub Actions hardening: ограниченные permissions, timeout для job, concurrency и checkout без сохранения credentials.
+- GitHub Actions закреплены по immutable commit SHA; Docker images закреплены по digest.
 - `.github/workflows/ci.yml` также запускает `Dependency Review` для pull request.
 - `.github/workflows/codeql.yml` — анализ безопасности.
 - `.github/workflows/scorecard.yml` — OSSF Scorecards для оценки supply-chain-подхода.

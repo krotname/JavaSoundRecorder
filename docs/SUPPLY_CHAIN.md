@@ -37,3 +37,9 @@ gh attestation verify javasoundrecorder-1.0.0-all.jar \
 
 `.github/workflows/release.yml` builds the shaded jar, generates CycloneDX SBOM files,
 creates checksums, and publishes GitHub artifact attestations before uploading release assets.
+
+## Workflow dependency integrity
+
+GitHub Actions are pinned to full commit SHAs with the reviewed version kept in a comment.
+Docker image references are pinned by digest. This avoids silent tag retargeting in CI,
+release, and scorecard workflows.
