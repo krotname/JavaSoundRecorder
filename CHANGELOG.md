@@ -31,6 +31,10 @@
 - GitHub Actions pinned to immutable commit SHAs and Docker images pinned by digest.
 - Repository security settings enabled for Dependabot security updates and secret scanning.
 - Release checksums now use downloadable asset basenames for direct verification.
+- Maven Wrapper distribution checksum added for stronger wrapper integrity.
+- Docker image updates added to Dependabot.
+- Governance documentation added for protected branch, required checks, and release accountability.
+- Security policy now links directly to GitHub Security Advisories.
 
 ## 1.0.0
 ### Added

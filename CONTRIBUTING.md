@@ -20,3 +20,8 @@ This repository is maintained as a portfolio-quality project. Keep changes scope
 - Validate docs/README references if behavior or flow changes.
 - Ensure new methods with non-obvious behavior include an intent comment.
 - If UI changes, refresh `assets/screenshot-ui.png` and verify `docs/QUALITY.md` references still hold.
+
+## Branch policy
+- Keep `master` releasable.
+- Use pull requests for feature or behavior changes.
+- Keep the required check set aligned with `docs/GOVERNANCE.md`.
