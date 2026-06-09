@@ -33,6 +33,7 @@ The baseline favors current stable releases over milestones, betas, snapshots, o
 - Keep Dependabot enabled for Maven, GitHub Actions, and Docker images.
 - Pin GitHub Actions to full commit SHAs and keep the human-readable version in a trailing comment.
 - Pin Docker images by digest; refresh the digest together with the reviewed tag.
+- Keep Docker runtime updates on the Java 21 line unless the project compilation target changes.
 - Keep `.mvn/wrapper/maven-wrapper.properties` distribution checksum in sync with the Maven distribution URL.
 
 ## Manual update check
