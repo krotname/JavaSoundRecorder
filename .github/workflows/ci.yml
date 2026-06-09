@@ -151,7 +151,7 @@ jobs:
         run: bash ./mvnw -q -DskipTests compile spotbugs:check
       - name: Secret scan
         run: |
-          if git grep -n --ignore-case -E 'DROPBOX_ACCESS_TOKEN[[:space:]]*=[[:space:]]*"' src/main/java src/test/java; then
+          if git grep -n --ignore-case -E '(dropbox|token|secret|password).*(=|:).*(sl\.|[A-Za-z0-9_=-]{32,})' -- src/main/java src/test/java .github; then
             echo "Hardcoded credential detected"
             exit 1
           fi

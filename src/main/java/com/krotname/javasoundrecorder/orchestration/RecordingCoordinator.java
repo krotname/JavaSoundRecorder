@@ -87,8 +87,10 @@ public class RecordingCoordinator {
                         upload.remotePath(),
                         upload.sizeBytes()
                 );
+                running.set(false);
                 future.complete(result);
             } catch (Exception e) {
+                running.set(false);
                 future.completeExceptionally(new IllegalStateException("Recording cycle failed", e));
             } finally {
                 running.set(false);
