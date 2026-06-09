@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Project documentation
+    url: https://github.com/krotname/JavaSoundRecorder/blob/master/README.md
+    about: Read the portfolio-focused overview and setup docs first.
+  - name: Security issue
+    url: https://github.com/krotname/JavaSoundRecorder/security/policy
+    about: Report security concerns through the repository security policy.

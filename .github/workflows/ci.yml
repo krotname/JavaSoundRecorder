@@ -1,0 +1,166 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+      - main
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  unit-tests:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+      - name: Run unit tests
+        run: bash ./mvnw -q -Dtest=*UnitTest test
+
+  integration-tests:
+    name: Integration tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+      - name: Run integration tests
+        run: bash ./mvnw -q -Dtest=*IntegrationTest test
+
+  ui-tests:
+    name: UI tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+      - name: Run UI tests
+        env:
+          JAVA_TOOL_OPTIONS: -Djava.awt.headless=true
+        run: bash ./mvnw -q -Dtest=*UiTest test
+
+  contract-and-smoke-tests:
+    name: Contract & smoke tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+      - name: Run contract and smoke tests
+        run: bash ./mvnw -q -Dtest='*ContractTest,*SmokeTest' test
+
+  architecture-tests:
+    name: Architecture tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+      - name: Run architecture tests
+        run: bash ./mvnw -q -Dtest=ArchitectureUnitTest test
+
+  quality-gate:
+    name: Quality and coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs:
+      - unit-tests
+      - integration-tests
+      - ui-tests
+      - contract-and-smoke-tests
+      - architecture-tests
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+      - name: Build and enforce quality gates
+        run: bash ./mvnw -q verify
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          files: target/site/jacoco/jacoco.xml
+          fail_ci_if_error: false
+
+  static-analysis:
+    name: Static checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+      - name: Checkstyle
+        run: bash ./mvnw -q checkstyle:check
+      - name: SpotBugs
+        run: bash ./mvnw -q -DskipTests compile spotbugs:check
+      - name: Secret scan
+        run: |
+          if git grep -n --ignore-case -E 'DROPBOX_ACCESS_TOKEN[[:space:]]*=[[:space:]]*"' src/main/java src/test/java; then
+            echo "Hardcoded credential detected"
+            exit 1
+          fi
+      - name: Dependency review
+        if: github.event_name == 'pull_request'
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: moderate
+      - name: Dependency analysis
+        run: bash ./mvnw -q -DskipTests -DfailOnWarning=false dependency:analyze-only
+      - name: Maven validate
+        run: bash ./mvnw -q -DskipTests validate

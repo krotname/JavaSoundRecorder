@@ -1,0 +1,75 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+  artifact-metadata: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+      - name: Build and verify
+        env:
+          JAVA_TOOL_OPTIONS: -Djava.awt.headless=true
+        run: bash ./mvnw -q verify
+      - name: Generate checksums
+        run: |
+          > target/checksums.txt
+          for artifact in target/javasoundrecorder-*-all.jar target/javasoundrecorder-*-sbom.json target/javasoundrecorder-*-sbom.xml; do
+            [ -e "$artifact" ] || continue
+            sha256sum "$artifact" >> target/checksums.txt
+          done
+          cat target/checksums.txt
+      - name: Verify SBOM
+        run: |
+          if ! compgen -G "target/javasoundrecorder-*-sbom.json" > /dev/null && ! compgen -G "target/javasoundrecorder-*-sbom.xml" > /dev/null; then
+            echo "SBOM not generated."
+            exit 1
+          fi
+      - name: Resolve release artifact paths
+        id: artifacts
+        run: |
+          jar="$(ls target/javasoundrecorder-*-all.jar | head -n 1)"
+          sbom_json="$(ls target/javasoundrecorder-*-sbom.json | head -n 1)"
+          echo "jar=$jar" >> "$GITHUB_OUTPUT"
+          echo "sbom_json=$sbom_json" >> "$GITHUB_OUTPUT"
+      - name: Generate provenance attestations
+        uses: actions/attest@v4
+        with:
+          subject-checksums: target/checksums.txt
+      - name: Generate SBOM attestation
+        uses: actions/attest@v4
+        with:
+          subject-path: ${{ steps.artifacts.outputs.jar }}
+          sbom-path: ${{ steps.artifacts.outputs.sbom_json }}
+      - name: Upload release artifact
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            target/javasoundrecorder-*-all.jar
+            target/javasoundrecorder-*-sbom.json
+            target/javasoundrecorder-*-sbom.xml
+            target/checksums.txt
+          draft: false
+          prerelease: false
