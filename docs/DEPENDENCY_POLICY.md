@@ -31,6 +31,8 @@ The baseline favors current stable releases over milestones, betas, snapshots, o
 - Keep test style in JUnit Jupiter; update tests by behavior, not framework churn.
 - Run `./mvnw -q verify` after dependency changes.
 - Keep Dependabot enabled for Maven and GitHub Actions.
+- Pin GitHub Actions to full commit SHAs and keep the human-readable version in a trailing comment.
+- Pin Docker images by digest; refresh the digest together with the reviewed tag.
 
 ## Manual update check
 

@@ -16,6 +16,7 @@
 - Security checks include dependency analysis and `CodeQL` workflow.
 - Pull request dependency policy is enforced by `dependency-review` in CI.
 - Workflows use least-privilege permissions, explicit timeouts, concurrency control, and non-persistent checkout credentials.
+- Workflow actions are pinned to immutable commit SHAs and container images are pinned by digest.
 - Current stable dependency baseline and update rules are documented in `docs/DEPENDENCY_POLICY.md`.
 - Supply-chain posture is additionally analyzed by OSSF Scorecards workflow.
 - Release automation is in `.github/workflows/release.yml` with full Maven verification, checksums, and artifact attestations.
@@ -43,6 +44,7 @@
 - Workflow quality posture is covered by actionlint for GitHub Actions YAML.
 - Modernized Maven/JUnit/SLF4J/JaCoCo/Checkstyle/SpotBugs/ArchUnit/CycloneDX baseline.
 - CI hardening is visible through scoped workflow permissions, job timeouts, and cancelled superseded runs.
+- Immutable workflow dependencies reduce tag-retargeting risk and improve OSSF Scorecards evidence.
 - Dependency manifest transparency through release artifacts containing CycloneDX SBOM in JSON and XML.
 - Release provenance and SBOM linkage are verifiable through GitHub artifact attestations.
 
