@@ -38,7 +38,7 @@ jobs:
           : > target/checksums.txt
           for artifact in target/javasoundrecorder-*-all.jar target/javasoundrecorder-*-sbom.json target/javasoundrecorder-*-sbom.xml; do
             [ -e "$artifact" ] || continue
-            sha256sum "$artifact" >> target/checksums.txt
+            sha256sum "$artifact" | sed 's#  target/#  #' >> target/checksums.txt
           done
           cat target/checksums.txt
       - name: Verify SBOM
