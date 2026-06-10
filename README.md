@@ -6,7 +6,7 @@
 ![Coverage](https://codecov.io/gh/krotname/JavaSoundRecorder/branch/master/graph/badge.svg)
 ![Release](https://img.shields.io/github/v/release/krotname/JavaSoundRecorder)
 ![Dependabot](https://img.shields.io/badge/Dependabot-Enabled-00ad45?logo=dependabot)
-![Scorecards](https://api.securityscorecards.dev/projects/github.com/krotname/JavaSoundRecorder/badge)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/krotname/JavaSoundRecorder/badge)](https://securityscorecards.dev/viewer/?uri=github.com/krotname/JavaSoundRecorder)
 ![License](https://img.shields.io/badge/License-GPL--3.0-blue)
 ![Issues](https://img.shields.io/github/issues/krotname/JavaSoundRecorder)
 ![Forks](https://img.shields.io/github/forks/krotname/JavaSoundRecorder)
