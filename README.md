@@ -1,17 +1,13 @@
 # JavaSoundRecorder
 
-![CI](https://github.com/krotname/JavaSoundRecorder/actions/workflows/ci.yml/badge.svg?branch=master)
-![Workflow lint](https://github.com/krotname/JavaSoundRecorder/actions/workflows/actionlint.yml/badge.svg?branch=master)
-![CodeQL](https://github.com/krotname/JavaSoundRecorder/actions/workflows/codeql.yml/badge.svg)
-![Coverage](https://codecov.io/gh/krotname/JavaSoundRecorder/branch/master/graph/badge.svg)
-![Release](https://img.shields.io/github/v/release/krotname/JavaSoundRecorder)
-![Dependabot](https://img.shields.io/badge/Dependabot-Enabled-00ad45?logo=dependabot)
+[![CI](https://github.com/krotname/JavaSoundRecorder/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/krotname/JavaSoundRecorder/actions/workflows/ci.yml?query=branch%3Amaster)
+[![CodeQL](https://github.com/krotname/JavaSoundRecorder/actions/workflows/codeql.yml/badge.svg?branch=master)](https://github.com/krotname/JavaSoundRecorder/actions/workflows/codeql.yml?query=branch%3Amaster)
+[![Coverage](https://codecov.io/gh/krotname/JavaSoundRecorder/branch/master/graph/badge.svg)](https://codecov.io/gh/krotname/JavaSoundRecorder)
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/krotname/JavaSoundRecorder/badge)](https://securityscorecards.dev/viewer/?uri=github.com/krotname/JavaSoundRecorder)
+[![Release](https://img.shields.io/github/v/release/krotname/JavaSoundRecorder?label=release)](https://github.com/krotname/JavaSoundRecorder/releases/latest)
+[![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
+[![Java](https://img.shields.io/badge/Java-21-007396)](https://adoptium.net/)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/13147/badge)](https://www.bestpractices.dev/projects/13147)
-![License](https://img.shields.io/badge/License-GPL--3.0-blue)
-![Issues](https://img.shields.io/github/issues/krotname/JavaSoundRecorder)
-![Forks](https://img.shields.io/github/forks/krotname/JavaSoundRecorder)
-![Java](https://img.shields.io/badge/Java-21-007396)
 
 JavaSoundRecorder — Java 21 desktop-проект для записи звука с микрофона, демонстрирующий аккуратную архитектуру, воспроизводимую сборку, многоуровневые тесты, CI, coverage и supply-chain quality gates.
 
