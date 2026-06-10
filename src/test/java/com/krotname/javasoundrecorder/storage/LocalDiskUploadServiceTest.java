@@ -27,4 +27,21 @@ class LocalDiskUploadServiceTest {
         assertTrue(Files.exists(expected));
         assertEquals("payload", Files.readString(expected));
     }
+
+    @Test
+    void replacesExistingUploadWithSameFileName(@TempDir Path workspace) throws Exception {
+        Path source = workspace.resolve("source").resolve("recording.wav");
+        Path uploadFolder = workspace.resolve("uploads");
+        Path target = uploadFolder.resolve("recording.wav");
+        Files.createDirectories(source.getParent());
+        Files.createDirectories(uploadFolder);
+        Files.writeString(source, "new", StandardOpenOption.CREATE_NEW);
+        Files.writeString(target, "old", StandardOpenOption.CREATE_NEW);
+
+        FileUploadResult result = new LocalDiskUploadService(uploadFolder).upload(source);
+
+        assertEquals(target.toString(), result.remotePath());
+        assertEquals(3, result.sizeBytes());
+        assertEquals("new", Files.readString(target));
+    }
 }

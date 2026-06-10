@@ -20,6 +20,24 @@ import org.junit.jupiter.api.Test;
 
 class HttpUploadServiceContractTest {
     @Test
+    void rejectsNullFileBeforeSendingRequest() {
+        HttpUploadService uploader = new HttpUploadService(URI.create("http://localhost/upload"));
+
+        NullPointerException error = assertThrows(NullPointerException.class, () -> uploader.upload(null));
+
+        assertEquals("file must not be null", error.getMessage());
+    }
+
+    @Test
+    void rejectsPathWithoutFileNameBeforeSendingRequest() {
+        HttpUploadService uploader = new HttpUploadService(URI.create("http://localhost/upload"));
+
+        IOException error = assertThrows(IOException.class, () -> uploader.upload(Path.of("/")));
+
+        assertEquals("Upload file must include a file name", error.getMessage());
+    }
+
+    @Test
     void postsFileBytesToEndpoint() throws Exception {
         HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
         Path file = Files.createTempFile("contract-upload", ".txt");

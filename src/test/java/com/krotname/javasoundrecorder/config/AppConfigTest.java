@@ -11,6 +11,13 @@ import org.junit.jupiter.api.Test;
 
 class AppConfigTest {
     @Test
+    void rejectsNullEnvironment() {
+        NullPointerException error = assertThrows(NullPointerException.class, () -> AppConfig.from(null));
+
+        assertEquals("env", error.getMessage());
+    }
+
+    @Test
     void defaultsAreAppliedWhenNoEnvironmentProvided() {
         Map<String, String> env = new HashMap<>();
         AppConfig config = AppConfig.from(env);
@@ -58,6 +65,35 @@ class AppConfigTest {
         AppConfig config = AppConfig.from(env);
 
         assertEquals("/team-recordings", config.dropboxUploadFolder());
+    }
+
+    @Test
+    void uploadFolderMayAlreadyBeAbsoluteWithTrailingSeparators() {
+        Map<String, String> env = new HashMap<>();
+        env.put(AppConfig.ENV_UPLOAD_FOLDER, "/team-recordings///");
+
+        AppConfig config = AppConfig.from(env);
+
+        assertEquals("/team-recordings", config.dropboxUploadFolder());
+    }
+
+    @Test
+    void explicitValuesAreExposedThroughSupportMap() {
+        Map<String, String> env = new HashMap<>();
+        env.put(AppConfig.ENV_RECORDING_DURATION_MS, "1234");
+        env.put(AppConfig.ENV_RECORDING_DIRECTORY, Path.of("target", "recordings").toString());
+        env.put(AppConfig.ENV_DROPBOX_ACCESS_TOKEN, "token");
+        env.put(AppConfig.ENV_UPLOAD_ENABLED, "true");
+        env.put(AppConfig.ENV_UPLOAD_FOLDER, "/team-recordings");
+
+        AppConfig config = AppConfig.from(env);
+        Map<String, String> supportMap = config.toSupportMap();
+
+        assertEquals("1234", supportMap.get("recordingDurationMs"));
+        assertEquals(config.recordingDirectory().toAbsolutePath().toString(), supportMap.get("recordingDirectory"));
+        assertEquals("true", supportMap.get("uploadEnabled"));
+        assertEquals("/team-recordings", supportMap.get("dropboxUploadFolder"));
+        assertEquals("token", config.dropboxAccessToken());
     }
 
     @Test

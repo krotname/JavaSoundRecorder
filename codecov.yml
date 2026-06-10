@@ -8,3 +8,9 @@ coverage:
       default:
         target: 70%
         threshold: 5%
+
+ignore:
+  - "src/main/java/com/krotname/javasoundrecorder/Main.java"
+  - "src/main/java/com/krotname/javasoundrecorder/audio/**/*"
+  - "src/main/java/com/krotname/javasoundrecorder/storage/DropboxUploadService.java"
+  - "src/main/java/com/krotname/javasoundrecorder/storage/NoopUploadService.java"

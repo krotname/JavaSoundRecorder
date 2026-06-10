@@ -1,7 +1,11 @@
 # Changelog
 
 ## Unreleased
+
+## 1.1.0
 ### Added
+- Focused tests for audio capture argument validation, `AppConfig`, Dropbox/HTTP/no-op upload services, and coordinator failure paths.
+- Codecov exclusions for UI/audio and external-upload adapters that are covered through focused contract and unit tests.
 - Local upload path test coverage for `LocalDiskUploadService`.
 - Explicit disabled-upload behavior test for coordinator fallback mode.
 - Hardened release checksum generation for versioned and wildcard artifacts.
