@@ -5,8 +5,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 class AppConfigTest {
@@ -85,6 +87,7 @@ class AppConfigTest {
         env.put(AppConfig.ENV_DROPBOX_ACCESS_TOKEN, "token");
         env.put(AppConfig.ENV_UPLOAD_ENABLED, "true");
         env.put(AppConfig.ENV_UPLOAD_FOLDER, "/team-recordings");
+        env.put(AppConfig.ENV_AUDIO_INPUT_NAME, "Microphone 1");
 
         AppConfig config = AppConfig.from(env);
         Map<String, String> supportMap = config.toSupportMap();
@@ -93,7 +96,48 @@ class AppConfigTest {
         assertEquals(config.recordingDirectory().toAbsolutePath().toString(), supportMap.get("recordingDirectory"));
         assertEquals("true", supportMap.get("uploadEnabled"));
         assertEquals("/team-recordings", supportMap.get("dropboxUploadFolder"));
+        assertEquals("Microphone 1", supportMap.get("audioInputName"));
         assertEquals("token", config.dropboxAccessToken());
+    }
+
+    @Test
+    void userPreferencesFillMissingEnvironmentValues() {
+        Map<String, String> env = new HashMap<>();
+        UserPreferences preferences = new UserPreferences(
+                Optional.of(Duration.ofMillis(2500)),
+                Optional.of(Path.of("target", "preferred-recordings")),
+                Optional.of(false),
+                Optional.of("Preferred microphone")
+        );
+
+        AppConfig config = AppConfig.from(env, preferences);
+
+        assertEquals(2500, config.recordingDuration().toMillis());
+        assertEquals(Path.of("target", "preferred-recordings"), config.recordingDirectory());
+        assertEquals(false, config.isUploadEnabled());
+        assertEquals("Preferred microphone", config.audioInputName());
+    }
+
+    @Test
+    void environmentValuesOverrideUserPreferences() {
+        Map<String, String> env = new HashMap<>();
+        env.put(AppConfig.ENV_RECORDING_DURATION_MS, "4000");
+        env.put(AppConfig.ENV_RECORDING_DIRECTORY, Path.of("target", "env-recordings").toString());
+        env.put(AppConfig.ENV_UPLOAD_ENABLED, "false");
+        env.put(AppConfig.ENV_AUDIO_INPUT_NAME, "Env microphone");
+        UserPreferences preferences = new UserPreferences(
+                Optional.of(Duration.ofMillis(2500)),
+                Optional.of(Path.of("target", "preferred-recordings")),
+                Optional.of(true),
+                Optional.of("Preferred microphone")
+        );
+
+        AppConfig config = AppConfig.from(env, preferences);
+
+        assertEquals(4000, config.recordingDuration().toMillis());
+        assertEquals(Path.of("target", "env-recordings"), config.recordingDirectory());
+        assertEquals(false, config.isUploadEnabled());
+        assertEquals("Env microphone", config.audioInputName());
     }
 
     @Test

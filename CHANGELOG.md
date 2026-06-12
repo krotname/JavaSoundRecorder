@@ -1,6 +1,47 @@
 # Changelog
 
 ## Unreleased
+### Added
+- Readable Swing UI state surface with separate short status and wrapped technical details.
+- `Open folder` action for the last successful recording.
+- Java Sound input preflight check that disables recording when no compatible microphone line is available.
+- UI regression coverage for long saved paths, final cancellation state, unavailable microphone state, and technical details.
+- Coordinator regression coverage for deleting partial WAV files after cancellation during capture.
+- Swing settings dialog for recording folder, duration, upload toggle, and input device.
+- User preferences file under `~/JavaSoundRecorder/settings.properties`.
+- `JAVASOUNDRECORDER_AUDIO_INPUT` environment override for selecting a Java Sound input mixer by name.
+- Config regression coverage for user preferences with environment override precedence.
+- Recordings library in the Swing UI with recent WAV files from the active output directory.
+- Library actions for play, rename, delete, reveal, and refresh.
+- Recording library service with scan, metadata, rename, and delete coverage.
+- Live recording telemetry in the Swing UI: elapsed time, remaining time, progress, and input level.
+- `Pause` / `Resume` recording control with cooperative capture pause semantics.
+- Keyboard shortcuts: `Ctrl+R` to start, `Space` to pause/resume, and `Esc` to stop.
+- Capture progress listener and recording control APIs for testable audio feedback.
+- Export foundation for selected recordings, including WAV copy export and SHA-256 checksum reporting.
+- Export profiles for WAV, FLAC, AIFF, AU, MP3, and OGG/Opus, with real WAV/FLAC output and clear
+  unsupported-format messages for profiles that still need codec backends.
+- Sidecar metadata editor for selected recordings (`title`, `artist`, `comment`).
+- Manual `Upload` action for retrying upload of a selected local recording.
+- Regression coverage for FLAC export, unsupported export profiles, metadata round-trip, and manual upload.
+
+### Changed
+- Swing UI now uses explicit states for idle, recording, stopping, cancelled, saved, failed, and unavailable.
+- Stop requests now show `Stopping...` first and move to a final cancelled state through the async workflow.
+- Successful UI recordings show `Saved` as a short status and keep the full file path in the details area.
+- CLI and UI startup now merge saved user preferences with environment values, keeping environment values authoritative.
+- Java Sound capture can target a selected input mixer instead of always using the system default.
+- Successful UI recordings refresh the library immediately.
+- Java Sound capture now uses a controlled read loop so pause/resume and level feedback are possible.
+- Library actions now include `Metadata`, `Export`, and `Upload` for selected recordings.
+- Recording rename/delete now keeps sidecar metadata consistent with the audio file.
+
+### Fixed
+- Long generated WAV names no longer make the main UI status unreadable.
+- Cancellation no longer leaves the UI stuck on an intermediate `Cancel requested` message.
+- Interrupted in-progress captures delete their unfinished WAV file instead of leaving an unexplained partial artifact.
+- FLAC export encodes from a temporary WAV copy so the original library recording remains available for rename/delete
+  on Windows.
 
 ## 1.1.0
 ### Added

@@ -16,6 +16,7 @@ public final class AppConfig {
     public static final String ENV_DROPBOX_ACCESS_TOKEN = "DROPBOX_ACCESS_TOKEN";
     public static final String ENV_UPLOAD_FOLDER = "JAVASOUNDRECORDER_DROPBOX_UPLOAD_FOLDER";
     public static final String ENV_UPLOAD_ENABLED = "JAVASOUNDRECORDER_UPLOAD_ENABLED";
+    public static final String ENV_AUDIO_INPUT_NAME = "JAVASOUNDRECORDER_AUDIO_INPUT";
 
     private static final Duration DEFAULT_RECORDING_DURATION = Duration.ofSeconds(60);
     private static final String DEFAULT_RECORDING_DIRECTORY =
@@ -28,18 +29,21 @@ public final class AppConfig {
     private final String dropboxAccessToken;
     private final String dropboxUploadFolder;
     private final boolean uploadEnabled;
+    private final String audioInputName;
 
     private AppConfig(
             Duration recordingDuration,
             Path recordingDirectory,
             String dropboxAccessToken,
             String dropboxUploadFolder,
-            boolean uploadEnabled) {
+            boolean uploadEnabled,
+            String audioInputName) {
         this.recordingDuration = recordingDuration;
         this.recordingDirectory = recordingDirectory;
         this.dropboxAccessToken = dropboxAccessToken;
         this.dropboxUploadFolder = dropboxUploadFolder;
         this.uploadEnabled = uploadEnabled;
+        this.audioInputName = audioInputName;
     }
 
     public static AppConfig fromEnvironment() {
@@ -52,19 +56,32 @@ public final class AppConfig {
      * avoid launching long-running jobs with invalid timing.
      */
     public static AppConfig from(Map<String, String> env) {
-        Objects.requireNonNull(env, "env");
-        Duration recordingDuration = parseDuration(env.get(ENV_RECORDING_DURATION_MS));
-        Path recordingDirectory = parsePath(env.get(ENV_RECORDING_DIRECTORY), DEFAULT_RECORDING_DIRECTORY);
-        String token = trimToNull(env.get(ENV_DROPBOX_ACCESS_TOKEN));
-        String uploadFolder = normalizeUploadFolder(env.get(ENV_UPLOAD_FOLDER));
-        boolean uploadEnabled = parseBoolean(env.get(ENV_UPLOAD_ENABLED), true) && token != null && !token.isBlank();
-
-        return new AppConfig(recordingDuration, recordingDirectory, token, uploadFolder, uploadEnabled);
+        return from(env, UserPreferences.empty());
     }
 
-    private static Duration parseDuration(String rawValue) {
+    /**
+     * Builds config from user preferences with environment values taking precedence.
+     */
+    public static AppConfig from(Map<String, String> env, UserPreferences preferences) {
+        Objects.requireNonNull(env, "env");
+        Objects.requireNonNull(preferences, "preferences");
+        Duration recordingDuration = parseDuration(env.get(ENV_RECORDING_DURATION_MS),
+                preferences.recordingDuration().orElse(DEFAULT_RECORDING_DURATION));
+        Path recordingDirectory = parsePath(env.get(ENV_RECORDING_DIRECTORY),
+                preferences.recordingDirectory().orElse(Path.of(DEFAULT_RECORDING_DIRECTORY)));
+        String token = trimToNull(env.get(ENV_DROPBOX_ACCESS_TOKEN));
+        String uploadFolder = normalizeUploadFolder(env.get(ENV_UPLOAD_FOLDER));
+        boolean preferredUpload = preferences.uploadEnabled().orElse(true);
+        boolean uploadEnabled = parseBoolean(env.get(ENV_UPLOAD_ENABLED), preferredUpload)
+                && token != null && !token.isBlank();
+        String audioInputName = resolveText(env.get(ENV_AUDIO_INPUT_NAME), preferences.audioInputName().orElse(null));
+
+        return new AppConfig(recordingDuration, recordingDirectory, token, uploadFolder, uploadEnabled, audioInputName);
+    }
+
+    private static Duration parseDuration(String rawValue, Duration defaultValue) {
         if (rawValue == null || rawValue.isBlank()) {
-            return DEFAULT_RECORDING_DURATION;
+            return defaultValue;
         }
         long millis;
         try {
@@ -96,10 +113,10 @@ public final class AppConfig {
         throw new IllegalArgumentException("Boolean value must be 'true' or 'false'.");
     }
 
-    private static Path parsePath(String rawValue, String defaultValue) {
+    private static Path parsePath(String rawValue, Path defaultValue) {
         String value = trimToNull(rawValue);
         if (value == null) {
-            return Path.of(defaultValue);
+            return defaultValue;
         }
         return Path.of(value);
     }
@@ -150,12 +167,25 @@ public final class AppConfig {
         return dropboxUploadFolder;
     }
 
+    public String audioInputName() {
+        return audioInputName;
+    }
+
     public Map<String, String> toSupportMap() {
         Map<String, String> value = new HashMap<>();
         value.put("recordingDurationMs", String.valueOf(recordingDuration.toMillis()));
         value.put("recordingDirectory", recordingDirectory.toAbsolutePath().toString());
         value.put("uploadEnabled", String.valueOf(isUploadEnabled()));
         value.put("dropboxUploadFolder", dropboxUploadFolder);
+        value.put("audioInputName", audioInputName == null ? "default" : audioInputName);
         return value;
+    }
+
+    private static String resolveText(String envValue, String preferredValue) {
+        String value = trimToNull(envValue);
+        if (value != null) {
+            return value;
+        }
+        return trimToNull(preferredValue);
     }
 }

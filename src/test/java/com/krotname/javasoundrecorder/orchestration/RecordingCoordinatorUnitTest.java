@@ -26,7 +26,9 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 class RecordingCoordinatorUnitTest {
     @Test
@@ -138,6 +140,62 @@ class RecordingCoordinatorUnitTest {
     }
 
     @Test
+    void requestStopDeletesPartialRecording(@TempDir Path workspace) throws Exception {
+        AppConfig config = AppConfig.from(envWithDirectory(workspace));
+        PartialBlockingCaptureService capture = new PartialBlockingCaptureService();
+        RecordingCoordinator coordinator = new RecordingCoordinator(
+                config,
+                capture,
+                new FakeUploader(),
+                new FileNameGenerator()
+        );
+
+        CompletableFuture<RecordingResult> future = coordinator.runOneShotAsync();
+        Path partial = capture.awaitStarted();
+        assertTrue(Files.exists(partial));
+
+        coordinator.requestStop();
+
+        assertThrows(CancellationException.class, future::join);
+        capture.awaitInterrupted();
+        awaitDeleted(partial);
+        assertEquals(false, coordinator.isRunning());
+    }
+
+    @Test
+    void progressListenerAndPauseControlReachCaptureService(@TempDir Path workspace) throws Exception {
+        AppConfig config = AppConfig.from(envWithDirectory(workspace));
+        PauseAwareCaptureService capture = new PauseAwareCaptureService();
+        AtomicBoolean pausedProgressSeen = new AtomicBoolean(false);
+        AtomicInteger maxLevel = new AtomicInteger();
+        RecordingCoordinator coordinator = new RecordingCoordinator(
+                config,
+                capture,
+                new FakeUploader(),
+                new FileNameGenerator()
+        );
+
+        CompletableFuture<RecordingResult> future = coordinator.runOneShotAsync((elapsed, remaining, level, paused) -> {
+            pausedProgressSeen.compareAndSet(false, paused);
+            maxLevel.updateAndGet(previous -> Math.max(previous, level));
+        });
+        capture.awaitStarted();
+        coordinator.togglePause();
+        capture.awaitPaused();
+
+        assertEquals(true, coordinator.isPaused());
+
+        coordinator.togglePause();
+        RecordingResult result = future.join();
+
+        assertEquals(false, coordinator.isPaused());
+        assertEquals(true, pausedProgressSeen.get());
+        assertEquals(50, maxLevel.get());
+        assertTrue(Files.exists(result.recordingPath()));
+    }
+
+
+    @Test
     void failsWhenCaptureReturnsNonexistentFile() {
         AppConfig config = AppConfig.from(envWithToken());
         RecordingCoordinator coordinator = new RecordingCoordinator(
@@ -193,6 +251,22 @@ class RecordingCoordinatorUnitTest {
         return env;
     }
 
+    private Map<String, String> envWithDirectory(Path directory) {
+        Map<String, String> env = new HashMap<>();
+        env.put(AppConfig.ENV_DROPBOX_ACCESS_TOKEN, "token");
+        env.put(AppConfig.ENV_RECORDING_DURATION_MS, "10000");
+        env.put(AppConfig.ENV_RECORDING_DIRECTORY, directory.toString());
+        return env;
+    }
+
+    private void awaitDeleted(Path path) throws InterruptedException {
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(2);
+        while (Files.exists(path) && System.nanoTime() < deadline) {
+            Thread.sleep(20);
+        }
+        assertEquals(false, Files.exists(path), "Partial recording should be deleted after cancellation");
+    }
+
     private static final class FakeCaptureService implements AudioCaptureService {
         @Override
         public Path captureToFile(Path outputFile, Duration maxDuration) throws IOException {
@@ -245,6 +319,89 @@ class RecordingCoordinatorUnitTest {
 
         void finishCapture() {
             finish.countDown();
+        }
+    }
+
+    private static final class PartialBlockingCaptureService implements AudioCaptureService {
+        private final CountDownLatch started = new CountDownLatch(1);
+        private final CountDownLatch interrupted = new CountDownLatch(1);
+        private volatile Path outputFile;
+
+        @Override
+        public Path captureToFile(Path outputFile, Duration maxDuration) throws IOException {
+            this.outputFile = outputFile;
+            Files.createDirectories(outputFile.getParent());
+            Files.write(outputFile, "partial".getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE_NEW);
+            started.countDown();
+            try {
+                Thread.sleep(maxDuration.toMillis());
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                interrupted.countDown();
+                throw new IOException("Capture interrupted", e);
+            }
+            return outputFile;
+        }
+
+        Path awaitStarted() throws InterruptedException {
+            if (!started.await(2, TimeUnit.SECONDS)) {
+                throw new InterruptedException("Capture did not start");
+            }
+            return outputFile;
+        }
+
+        void awaitInterrupted() throws InterruptedException {
+            if (!interrupted.await(2, TimeUnit.SECONDS)) {
+                throw new InterruptedException("Capture was not interrupted");
+            }
+        }
+    }
+
+    private static final class PauseAwareCaptureService implements AudioCaptureService {
+        private final CountDownLatch started = new CountDownLatch(1);
+        private final CountDownLatch paused = new CountDownLatch(1);
+
+        @Override
+        public Path captureToFile(Path outputFile, Duration maxDuration) throws IOException {
+            Files.createDirectories(outputFile.getParent());
+            Files.write(outputFile, "data".getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE_NEW);
+            return outputFile;
+        }
+
+        @Override
+        public Path captureToFile(Path outputFile, Duration maxDuration,
+                                  com.krotname.javasoundrecorder.audio.CaptureProgressListener listener,
+                                  com.krotname.javasoundrecorder.audio.RecordingControl control) throws IOException {
+            started.countDown();
+            listener.onProgress(Duration.ofMillis(100), maxDuration.minusMillis(100), 10, false);
+            long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(2);
+            while (!control.isPaused() && System.nanoTime() < deadline) {
+                Thread.yield();
+            }
+            if (control.isPaused()) {
+                listener.onProgress(Duration.ofMillis(100), maxDuration.minusMillis(100), 0, true);
+                paused.countDown();
+                try {
+                    control.waitWhilePaused();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new IOException("Interrupted while paused", e);
+                }
+            }
+            listener.onProgress(maxDuration, Duration.ZERO, 50, false);
+            return captureToFile(outputFile, maxDuration);
+        }
+
+        void awaitStarted() throws InterruptedException {
+            if (!started.await(2, TimeUnit.SECONDS)) {
+                throw new InterruptedException("Capture did not start");
+            }
+        }
+
+        void awaitPaused() throws InterruptedException {
+            if (!paused.await(2, TimeUnit.SECONDS)) {
+                throw new InterruptedException("Capture did not observe pause");
+            }
         }
     }
 

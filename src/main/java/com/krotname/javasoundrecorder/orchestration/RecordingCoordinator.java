@@ -1,6 +1,8 @@
 package com.krotname.javasoundrecorder.orchestration;
 
 import com.krotname.javasoundrecorder.audio.AudioCaptureService;
+import com.krotname.javasoundrecorder.audio.CaptureProgressListener;
+import com.krotname.javasoundrecorder.audio.RecordingControl;
 import com.krotname.javasoundrecorder.config.AppConfig;
 import com.krotname.javasoundrecorder.model.FileUploadResult;
 import com.krotname.javasoundrecorder.model.RecordingResult;
@@ -15,8 +17,11 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class RecordingCoordinator {
+    private static final Logger logger = LoggerFactory.getLogger(RecordingCoordinator.class);
     private static final String FILE_PREFIX = "recording";
 
     private final AppConfig config;
@@ -34,6 +39,8 @@ public class RecordingCoordinator {
     private final AtomicBoolean running = new AtomicBoolean(false);
     private final AtomicReference<CompletableFuture<RecordingResult>> runningTask = new AtomicReference<>();
     private final AtomicReference<Future<?>> runningWorker = new AtomicReference<>();
+    private final AtomicReference<Path> runningOutputPath = new AtomicReference<>();
+    private final AtomicReference<RecordingControl> runningControl = new AtomicReference<>();
 
     public RecordingCoordinator(AppConfig config, AudioCaptureService captureService, UploadService uploadService,
                                FileNameGenerator fileNameGenerator) {
@@ -56,6 +63,11 @@ public class RecordingCoordinator {
         if (activeWorker != null) {
             activeWorker.cancel(true);
         }
+        RecordingControl control = runningControl.getAndSet(null);
+        if (control != null) {
+            control.requestStop();
+        }
+        deletePartialRecording(runningOutputPath.getAndSet(null));
         running.set(false);
         executor.shutdownNow();
     }
@@ -66,6 +78,10 @@ public class RecordingCoordinator {
      * protects against overlapping runs through an atomic run-state flag.
      */
     public CompletableFuture<RecordingResult> runOneShotAsync() {
+        return runOneShotAsync(CaptureProgressListener.noop());
+    }
+
+    public CompletableFuture<RecordingResult> runOneShotAsync(CaptureProgressListener progressListener) {
         if (executor.isShutdown()) {
             throw new IllegalStateException("RecordingCoordinator already closed");
         }
@@ -74,13 +90,30 @@ public class RecordingCoordinator {
         }
 
         CompletableFuture<RecordingResult> future = new CompletableFuture<>();
+        RecordingControl control = new RecordingControl();
         runningTask.set(future);
+        runningControl.set(control);
         Future<?> worker = executor.submit(() -> {
             Path recordingsDir = config.recordingDirectory();
             Path outputPath = generateOutputPath(recordingsDir);
+            runningOutputPath.set(outputPath);
+            boolean captureCompleted = false;
             try {
-                Path captured = captureService.captureToFile(outputPath, config.recordingDuration());
+                Path captured = captureService.captureToFile(
+                        outputPath,
+                        config.recordingDuration(),
+                        progressListener,
+                        control
+                );
+                if (future.isCancelled() || Thread.currentThread().isInterrupted()) {
+                    deletePartialRecording(captured);
+                    return;
+                }
+                captureCompleted = true;
                 FileUploadResult upload = upload(captured);
+                if (future.isCancelled() || Thread.currentThread().isInterrupted()) {
+                    return;
+                }
                 RecordingResult result = new RecordingResult(
                         captured,
                         config.isUploadEnabled(),
@@ -91,8 +124,17 @@ public class RecordingCoordinator {
                 future.complete(result);
             } catch (Exception e) {
                 running.set(false);
-                future.completeExceptionally(new IllegalStateException("Recording cycle failed", e));
+                if (future.isCancelled() || Thread.currentThread().isInterrupted()) {
+                    if (!captureCompleted) {
+                        deletePartialRecording(outputPath);
+                    }
+                    future.cancel(true);
+                } else {
+                    future.completeExceptionally(new IllegalStateException("Recording cycle failed", e));
+                }
             } finally {
+                runningOutputPath.compareAndSet(outputPath, null);
+                runningControl.compareAndSet(control, null);
                 running.set(false);
             }
         });
@@ -119,12 +161,28 @@ public class RecordingCoordinator {
         if (task == null) {
             return;
         }
+        RecordingControl control = runningControl.get();
+        if (control != null) {
+            control.requestStop();
+        }
         task.cancel(true);
         Future<?> worker = runningWorker.getAndSet(null);
         if (worker != null) {
             worker.cancel(true);
         }
         running.set(false);
+    }
+
+    public void togglePause() {
+        RecordingControl control = runningControl.get();
+        if (control != null) {
+            control.togglePause();
+        }
+    }
+
+    public boolean isPaused() {
+        RecordingControl control = runningControl.get();
+        return control != null && control.isPaused();
     }
 
     /**
@@ -152,5 +210,16 @@ public class RecordingCoordinator {
     private Path generateOutputPath(Path recordingDirectory) {
         String fileName = fileNameGenerator.next(FILE_PREFIX) + ".wav";
         return recordingDirectory.resolve(fileName);
+    }
+
+    private void deletePartialRecording(Path outputPath) {
+        if (outputPath == null) {
+            return;
+        }
+        try {
+            Files.deleteIfExists(outputPath);
+        } catch (IOException e) {
+            logger.warn("Could not delete partial recording {}", outputPath, e);
+        }
     }
 }
