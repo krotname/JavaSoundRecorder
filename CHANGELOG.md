@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased
+
+## 1.2.0 - 2026-06-16
 ### Added
 - Readable Swing UI state surface with separate short status and wrapped technical details.
 - `Open folder` action for the last successful recording.
@@ -42,6 +44,8 @@
 - Interrupted in-progress captures delete their unfinished WAV file instead of leaving an unexplained partial artifact.
 - FLAC export encodes from a temporary WAV copy so the original library recording remains available for rename/delete
   on Windows.
+- FLAC export now creates encoder scratch files under a private JavaSoundRecorder temp directory instead of the
+  public system temp directory.
 
 ## 1.1.0
 ### Added

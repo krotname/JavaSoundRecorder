@@ -3,14 +3,18 @@ package com.krotname.javasoundrecorder.export;
 import com.krotname.javasoundrecorder.library.RecordingEntry;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.PosixFilePermission;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.EnumSet;
 import java.util.HexFormat;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Set;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
@@ -20,6 +24,7 @@ public class RecordingExportService {
     private static final String SHA_256 = "SHA-256";
     private static final int BUFFER_SIZE = 8_192;
     private static final String EXTENSION_PREFIX = ".";
+    private static final String LOCAL_APP_DATA = "LOCALAPPDATA";
 
     public ExportResult exportWav(RecordingEntry entry, Path target) throws IOException {
         return export(entry, target, ExportFormat.WAV);
@@ -56,7 +61,7 @@ public class RecordingExportService {
     }
 
     private void writeFlac(Path source, Path destination) throws IOException {
-        Path encodingSource = Files.createTempFile("javasoundrecorder-flac-source-", ".wav");
+        Path encodingSource = Files.createTempFile(encodingTempDirectory(), "flac-source-", ".wav");
         Files.copy(source, encodingSource, StandardCopyOption.REPLACE_EXISTING);
         FLAC_FileEncoder encoder = new FLAC_FileEncoder();
         encoder.useThreads(false);
@@ -67,6 +72,47 @@ public class RecordingExportService {
             }
         } finally {
             deleteTempSource(encodingSource);
+        }
+    }
+
+    private Path encodingTempDirectory() throws IOException {
+        Path tempDirectory = appTempRoot().resolve("flac");
+        Files.createDirectories(tempDirectory);
+        restrictOwnerAccess(tempDirectory);
+        cleanupStaleEncodingSources(tempDirectory);
+        return tempDirectory;
+    }
+
+    private void cleanupStaleEncodingSources(Path tempDirectory) throws IOException {
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(tempDirectory, "flac-source-*.wav")) {
+            for (Path source : stream) {
+                try {
+                    Files.deleteIfExists(source);
+                } catch (IOException ignored) {
+                    // The FLAC encoder may keep a previous input file locked on Windows until JVM exit.
+                }
+            }
+        }
+    }
+
+    private Path appTempRoot() {
+        String localAppData = System.getenv(LOCAL_APP_DATA);
+        if (localAppData != null && !localAppData.isBlank()) {
+            return Path.of(localAppData, "JavaSoundRecorder", "tmp");
+        }
+        return Path.of(System.getProperty("user.home"), ".javasoundrecorder", "tmp");
+    }
+
+    private void restrictOwnerAccess(Path directory) throws IOException {
+        Set<PosixFilePermission> ownerOnly = EnumSet.of(
+                PosixFilePermission.OWNER_READ,
+                PosixFilePermission.OWNER_WRITE,
+                PosixFilePermission.OWNER_EXECUTE
+        );
+        try {
+            Files.setPosixFilePermissions(directory, ownerOnly);
+        } catch (UnsupportedOperationException ignored) {
+            // Windows and some mounted filesystems do not expose POSIX permissions.
         }
     }
 
