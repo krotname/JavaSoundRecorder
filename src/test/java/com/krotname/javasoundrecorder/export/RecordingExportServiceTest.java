@@ -73,6 +73,42 @@ class RecordingExportServiceTest {
         assertEquals(Files.size(result.path()), result.sizeBytes());
     }
 
+    @Test
+    void resolvesPrivateTempRootFromLocalAppData() {
+        assertEquals(
+                Path.of("local-app-data", "JavaSoundRecorder", "tmp"),
+                RecordingExportService.resolveAppTempRoot("local-app-data", "home")
+        );
+    }
+
+    @Test
+    void resolvesPrivateTempRootFromUserHomeWhenLocalAppDataIsMissingOrBlank() {
+        assertEquals(
+                Path.of("home", ".javasoundrecorder", "tmp"),
+                RecordingExportService.resolveAppTempRoot(null, "home")
+        );
+        assertEquals(
+                Path.of("home", ".javasoundrecorder", "tmp"),
+                RecordingExportService.resolveAppTempRoot(" ", "home")
+        );
+    }
+
+    @Test
+    void preparesPrivateTempDirectoryAndCleansStaleSources(@TempDir Path workspace) throws IOException {
+        Path privateTempRoot = workspace.resolve("private-temp");
+        Path flacTempDirectory = privateTempRoot.resolve("flac");
+        Files.createDirectories(flacTempDirectory);
+        Path staleSource = flacTempDirectory.resolve("flac-source-stale.wav");
+        Files.write(staleSource, "stale".getBytes(StandardCharsets.UTF_8));
+        RecordingExportService privateTempService = new RecordingExportService(privateTempRoot);
+
+        Path tempDirectory = privateTempService.encodingTempDirectory();
+
+        assertEquals(flacTempDirectory, tempDirectory);
+        assertTrue(Files.exists(flacTempDirectory));
+        assertEquals(false, Files.exists(staleSource));
+    }
+
     private void writeTestWav(Path source) throws IOException {
         byte[] samples = new byte[FRAME_COUNT * BYTES_PER_SAMPLE];
         AudioFormat format = new AudioFormat(SAMPLE_RATE, SAMPLE_BITS, CHANNELS, true, false);

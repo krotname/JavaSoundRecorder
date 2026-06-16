@@ -25,6 +25,15 @@ public class RecordingExportService {
     private static final int BUFFER_SIZE = 8_192;
     private static final String EXTENSION_PREFIX = ".";
     private static final String LOCAL_APP_DATA = "LOCALAPPDATA";
+    private final Path tempRoot;
+
+    public RecordingExportService() {
+        this(resolveAppTempRoot(System.getenv(LOCAL_APP_DATA), System.getProperty("user.home")));
+    }
+
+    RecordingExportService(Path tempRoot) {
+        this.tempRoot = Objects.requireNonNull(tempRoot, "tempRoot");
+    }
 
     public ExportResult exportWav(RecordingEntry entry, Path target) throws IOException {
         return export(entry, target, ExportFormat.WAV);
@@ -75,8 +84,8 @@ public class RecordingExportService {
         }
     }
 
-    private Path encodingTempDirectory() throws IOException {
-        Path tempDirectory = appTempRoot().resolve("flac");
+    Path encodingTempDirectory() throws IOException {
+        Path tempDirectory = tempRoot.resolve("flac");
         Files.createDirectories(tempDirectory);
         restrictOwnerAccess(tempDirectory);
         cleanupStaleEncodingSources(tempDirectory);
@@ -95,12 +104,11 @@ public class RecordingExportService {
         }
     }
 
-    private Path appTempRoot() {
-        String localAppData = System.getenv(LOCAL_APP_DATA);
+    static Path resolveAppTempRoot(String localAppData, String userHome) {
         if (localAppData != null && !localAppData.isBlank()) {
             return Path.of(localAppData, "JavaSoundRecorder", "tmp");
         }
-        return Path.of(System.getProperty("user.home"), ".javasoundrecorder", "tmp");
+        return Path.of(userHome, ".javasoundrecorder", "tmp");
     }
 
     private void restrictOwnerAccess(Path directory) throws IOException {
