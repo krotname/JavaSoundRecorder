@@ -20,7 +20,7 @@ import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
 import net.sourceforge.javaflacencoder.FLAC_FileEncoder;
 
-public class RecordingExportService {
+public final class RecordingExportService {
     private static final String SHA_256 = "SHA-256";
     private static final int BUFFER_SIZE = 8_192;
     private static final String EXTENSION_PREFIX = ".";

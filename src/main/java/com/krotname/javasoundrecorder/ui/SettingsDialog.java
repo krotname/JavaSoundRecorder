@@ -22,7 +22,7 @@ import javax.swing.JTextField;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.WindowConstants;
 
-public class SettingsDialog extends JDialog {
+public final class SettingsDialog extends JDialog {
     private static final String DEFAULT_INPUT_LABEL = "System default";
     private static final int FIELD_COLUMNS = 28;
     private static final int INSET = 6;
