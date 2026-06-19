@@ -7,7 +7,7 @@
 
   <groupId>com.krotname</groupId>
   <artifactId>javasoundrecorder</artifactId>
-  <version>1.2.0</version>
+  <version>1.2.1</version>
   <name>JavaSoundRecorder</name>
   <description>Microphone recorder with optional Dropbox upload.</description>
   <url>https://github.com/krotname/JavaSoundRecorder</url>

@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## 1.2.1 - 2026-06-19
+### Changed
+- Hardened CI, release, Docker, and Scorecard workflows after repository audit.
+- Refreshed Maven wrapper and dependency baselines for the current release build.
+
+### Fixed
+- Tightened export path handling and settings dialog behavior covered by the refreshed tests.
+
 ## 1.2.0 - 2026-06-16
 ### Added
 - Readable Swing UI state surface with separate short status and wrapped technical details.
