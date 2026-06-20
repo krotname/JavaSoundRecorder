@@ -1,5 +1,7 @@
 # JavaSoundRecorder
 
+[English](README.en.md)
+
 [![CI](https://github.com/krotname/JavaSoundRecorder/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/krotname/JavaSoundRecorder/actions/workflows/ci.yml?query=branch%3Amaster)
 [![CodeQL](https://github.com/krotname/JavaSoundRecorder/actions/workflows/codeql.yml/badge.svg?branch=master)](https://github.com/krotname/JavaSoundRecorder/actions/workflows/codeql.yml?query=branch%3Amaster)
 [![Coverage](https://codecov.io/gh/krotname/JavaSoundRecorder/branch/master/graph/badge.svg)](https://codecov.io/gh/krotname/JavaSoundRecorder)
