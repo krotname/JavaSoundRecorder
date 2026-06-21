@@ -56,6 +56,23 @@ cd JavaSoundRecorder
 
 В Windows используйте `mvnw.cmd` вместо `./mvnw`.
 
+### Установка из релиза
+
+1. Скачайте `javasoundrecorder-*-all.jar`, SBOM и `checksums.txt` из
+   [latest release](https://github.com/krotname/JavaSoundRecorder/releases/latest).
+2. Проверьте checksums и GitHub attestations:
+
+```bash
+sha256sum -c checksums.txt
+gh attestation verify javasoundrecorder-*-all.jar --repo krotname/JavaSoundRecorder
+```
+
+3. Запустите:
+
+```bash
+java -jar javasoundrecorder-*-all.jar
+```
+
 ### Запуск CLI
 
 ```bash

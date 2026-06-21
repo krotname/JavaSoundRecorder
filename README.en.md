@@ -28,6 +28,23 @@ cd JavaSoundRecorder
 
 On Windows, use `mvnw.cmd` instead of `./mvnw`.
 
+### Install from release
+
+1. Download `javasoundrecorder-*-all.jar`, SBOM, and `checksums.txt` from the
+   [latest release](https://github.com/krotname/JavaSoundRecorder/releases/latest).
+2. Verify checksums and GitHub attestations:
+
+```bash
+sha256sum -c checksums.txt
+gh attestation verify javasoundrecorder-*-all.jar --repo krotname/JavaSoundRecorder
+```
+
+3. Run:
+
+```bash
+java -jar javasoundrecorder-*-all.jar
+```
+
 ### CLI mode
 
 ```bash
