@@ -27,14 +27,14 @@
     <maven-exec-plugin.version>3.6.3</maven-exec-plugin.version>
     <jacoco.version>0.8.15</jacoco.version>
     <slf4j.version>2.0.18</slf4j.version>
-    <dropbox.version>7.0.0</dropbox.version>
+    <dropbox.version>8.0.0</dropbox.version>
     <jackson-core.version>2.22.0</jackson-core.version>
     <java-flac-encoder.version>0.3.8</java-flac-encoder.version>
-    <junit.version>6.1.0</junit.version>
+    <junit.version>6.1.1</junit.version>
     <shade.version>3.6.2</shade.version>
     <checkstyle.plugin.version>3.6.0</checkstyle.plugin.version>
     <enforcer.version>3.6.3</enforcer.version>
-    <checkstyle.dep.version>13.6.0</checkstyle.dep.version>
+    <checkstyle.dep.version>13.7.0</checkstyle.dep.version>
     <cyclonedx.version>2.9.2</cyclonedx.version>
     <archunit.version>1.4.2</archunit.version>
     <spotbugs.version>4.10.2.0</spotbugs.version>
