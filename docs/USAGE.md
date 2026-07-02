@@ -18,6 +18,10 @@ On Windows, use `mvnw.cmd` instead of `./mvnw`.
 The UI exposes `Start` and `Stop` controls, status text, wrapped details, and an `Open folder`
 action for the last successful recording.
 
+![Main window in the idle state with the recordings library](../assets/screenshot-ui.png)
+
+![Main window while recording: elapsed/remaining time, progress, and input level](../assets/screenshot-recording.png)
+
 - `Start` begins one bounded recording cycle.
 - `Pause` pauses the active capture and changes to `Resume`; paused time does not count toward the configured duration.
 - `Stop` requests cancellation and shows `Stopping...` until the workflow reaches a final state.
@@ -26,6 +30,9 @@ action for the last successful recording.
 - If no compatible microphone input line is available, the UI disables `Start` and shows a preflight message.
 - `Settings` opens recording folder, duration, upload, and input-device settings. Saved settings are applied to the
   current UI session when no recording is running.
+
+  ![Settings dialog: folder, duration, upload, input device](../assets/screenshot-settings.png)
+
 - The `Recordings` list shows WAV files from the active recording folder.
 - Library actions support `Play`, `Rename`, `Metadata`, `Delete`, `Export`, `Upload`, `Reveal`, and `Refresh`.
 - `Metadata` saves title, artist, and comment in a UTF-8 sidecar file next to the WAV.
@@ -53,10 +60,13 @@ UI settings are saved in:
 
 Environment variables still take precedence over saved UI settings. This keeps CLI, CI, and scripted runs reproducible.
 
-### Capturing a UI screenshot for README
+### Capturing UI screenshots for the docs
 
-- Start UI mode and capture a screenshot window as `assets/screenshot-ui.png`.
-- Use a focused, uncluttered environment for repeatable visual presentation.
+- Refresh all three assets together so they show the same theme and states: `assets/screenshot-ui.png` (idle with
+  recordings), `assets/screenshot-recording.png` (recording in progress), and `assets/screenshot-settings.png`
+  (settings dialog).
+- Start UI mode and capture the window, or drive `RecorderPanel`/`SettingsDialog` directly with sample data under a
+  virtual display for repeatable, uncluttered captures.
 
 ## Containers
 

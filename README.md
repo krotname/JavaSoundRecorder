@@ -13,6 +13,16 @@
 
 JavaSoundRecorder — Java 21 desktop-проект для записи звука с микрофона, демонстрирующий аккуратную архитектуру, воспроизводимую сборку, многоуровневые тесты, CI, coverage и supply-chain quality gates.
 
+## Скриншоты
+
+Swing UI с современной темой FlatLaf (light) — библиотека записей, телеметрия и горячие клавиши:
+
+![Главное окно JavaSoundRecorder в состоянии готовности](assets/screenshot-ui.png)
+
+| Идёт запись | Диалог настроек |
+| --- | --- |
+| ![Окно во время записи: прогресс и уровень входа](assets/screenshot-recording.png) | ![Настройки: папка, длительность, загрузка, устройство входа](assets/screenshot-settings.png) |
+
 ## Что показывает репозиторий
 
 - Чёткие слои: `config`, `audio`, `orchestration`, `storage`, `ui`.

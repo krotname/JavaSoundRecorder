@@ -19,7 +19,8 @@ This repository is maintained as a portfolio-quality project. Keep changes scope
 - CI remains green locally and on GitHub Actions.
 - Validate docs/README references if behavior or flow changes.
 - Ensure new methods with non-obvious behavior include an intent comment.
-- If UI changes, refresh `assets/screenshot-ui.png` and verify `docs/QUALITY.md` references still hold.
+- If UI changes, refresh the screenshots in `assets/` (`screenshot-ui.png`, `screenshot-recording.png`,
+  `screenshot-settings.png`) and verify `docs/QUALITY.md` references still hold.
 
 ## Branch policy
 - Keep `master` releasable.

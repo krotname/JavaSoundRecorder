@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased
+### Added
+- Real FlatLaf UI screenshots (idle, recording, settings) embedded in `README`, `README.en`, and `docs/USAGE`.
 
 ## 1.3.0 - 2026-07-02
 ### Added
