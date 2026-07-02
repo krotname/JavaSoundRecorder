@@ -18,6 +18,7 @@ import com.krotname.javasoundrecorder.orchestration.RecordingCoordinator;
 import com.krotname.javasoundrecorder.storage.DropboxUploadService;
 import com.krotname.javasoundrecorder.storage.NoopUploadService;
 import com.krotname.javasoundrecorder.storage.UploadService;
+import com.krotname.javasoundrecorder.ui.ModernLookAndFeel;
 import com.krotname.javasoundrecorder.ui.RecorderPanel;
 import com.krotname.javasoundrecorder.ui.RecorderSettings;
 import com.krotname.javasoundrecorder.ui.SettingsDialog;
@@ -118,6 +119,7 @@ public final class Main {
      * This avoids hidden background work after manual close in demonstration runs.
      */
     private static void launchUi(AppRuntime runtime) {
+        ModernLookAndFeel.install();
         // Keep Swing construction on the EDT and capture panel reference early to avoid
         // accidental nulls when wiring callbacks.
         EventQueue.invokeLater(() -> {

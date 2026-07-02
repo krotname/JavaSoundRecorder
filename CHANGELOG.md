@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+## 1.3.0 - 2026-07-02
+### Added
+- FlatLaf 3.7.1 dependency and a `ModernLookAndFeel` installer with UI regression coverage.
+
+### Changed
+- Swing UI now starts with the modern FlatLaf light look and feel: flat controls, rounded buttons,
+  inputs, progress bars, and slim scrollbars instead of the legacy Metal theme.
+- Main window default size grew to 800x420 so all library actions stay visible with the new theme.
+
 ## 1.2.1 - 2026-06-19
 ### Changed
 - Hardened CI, release, Docker, and Scorecard workflows after repository audit.
