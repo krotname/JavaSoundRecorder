@@ -7,7 +7,7 @@
 
   <groupId>com.krotname</groupId>
   <artifactId>javasoundrecorder</artifactId>
-  <version>1.2.1</version>
+  <version>1.3.0</version>
   <name>JavaSoundRecorder</name>
   <description>Microphone recorder with optional Dropbox upload.</description>
   <url>https://github.com/krotname/JavaSoundRecorder</url>
@@ -28,6 +28,7 @@
     <jacoco.version>0.8.15</jacoco.version>
     <slf4j.version>2.0.18</slf4j.version>
     <dropbox.version>8.0.0</dropbox.version>
+    <flatlaf.version>3.7.1</flatlaf.version>
     <jackson-core.version>2.22.0</jackson-core.version>
     <java-flac-encoder.version>0.3.8</java-flac-encoder.version>
     <junit.version>6.1.1</junit.version>
@@ -70,6 +71,11 @@
       <groupId>com.github.axet</groupId>
       <artifactId>java-flac-encoder</artifactId>
       <version>${java-flac-encoder.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.formdev</groupId>
+      <artifactId>flatlaf</artifactId>
+      <version>${flatlaf.version}</version>
     </dependency>
 
     <dependency>

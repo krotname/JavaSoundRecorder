@@ -28,8 +28,8 @@ import javax.swing.ListSelectionModel;
 public class RecorderPanel extends JPanel {
     private static final int VERTICAL_GAP = 10;
     private static final int HORIZONTAL_GAP = 10;
-    private static final int PREF_WIDTH = 620;
-    private static final int PREF_HEIGHT = 360;
+    private static final int PREF_WIDTH = 800;
+    private static final int PREF_HEIGHT = 420;
     private static final int BORDER_GAP = 12;
     private static final int DETAILS_ROWS = 4;
     private static final int PERCENT_MAX = 100;
