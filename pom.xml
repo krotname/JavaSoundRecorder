@@ -27,7 +27,7 @@
     <maven-exec-plugin.version>3.6.3</maven-exec-plugin.version>
     <jacoco.version>0.8.15</jacoco.version>
     <slf4j.version>2.0.18</slf4j.version>
-    <dropbox.version>8.0.0</dropbox.version>
+    <dropbox.version>8.0.1</dropbox.version>
     <flatlaf.version>3.7.1</flatlaf.version>
     <jackson-core.version>2.22.0</jackson-core.version>
     <java-flac-encoder.version>0.3.8</java-flac-encoder.version>
