@@ -15,7 +15,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,11 +35,7 @@ public class RecordingCoordinator {
             return thread;
         }
     });
-    private final AtomicBoolean running = new AtomicBoolean(false);
-    private final AtomicReference<CompletableFuture<RecordingResult>> runningTask = new AtomicReference<>();
-    private final AtomicReference<Future<?>> runningWorker = new AtomicReference<>();
-    private final AtomicReference<Path> runningOutputPath = new AtomicReference<>();
-    private final AtomicReference<RecordingControl> runningControl = new AtomicReference<>();
+    private final AtomicReference<RunState> activeRun = new AtomicReference<>();
 
     public RecordingCoordinator(AppConfig config, AudioCaptureService captureService, UploadService uploadService,
                                FileNameGenerator fileNameGenerator) {
@@ -55,20 +50,15 @@ public class RecordingCoordinator {
      * This keeps background threads from surviving after CLI exit or UI disposal.
      */
     public void close() {
-        CompletableFuture<RecordingResult> activeTask = runningTask.getAndSet(null);
-        if (activeTask != null) {
-            activeTask.cancel(true);
+        RunState run = activeRun.getAndSet(null);
+        if (run != null) {
+            run.control.requestStop();
+            run.future.cancel(true);
+            Future<?> worker = run.worker;
+            if (worker != null) {
+                worker.cancel(true);
+            }
         }
-        Future<?> activeWorker = runningWorker.getAndSet(null);
-        if (activeWorker != null) {
-            activeWorker.cancel(true);
-        }
-        RecordingControl control = runningControl.getAndSet(null);
-        if (control != null) {
-            control.requestStop();
-        }
-        deletePartialRecording(runningOutputPath.getAndSet(null));
-        running.set(false);
         executor.shutdownNow();
     }
 
@@ -85,71 +75,94 @@ public class RecordingCoordinator {
         if (executor.isShutdown()) {
             throw new IllegalStateException("RecordingCoordinator already closed");
         }
-        if (!running.compareAndSet(false, true)) {
+        RunState run = new RunState();
+        while (!activeRun.compareAndSet(null, run)) {
+            RunState current = activeRun.get();
+            if (current == null) {
+                continue;
+            }
+            if (current.future.isDone()) {
+                activeRun.compareAndSet(current, null);
+                continue;
+            }
             throw new IllegalStateException("Recording already running");
         }
 
-        CompletableFuture<RecordingResult> future = new CompletableFuture<>();
-        RecordingControl control = new RecordingControl();
-        runningTask.set(future);
-        runningControl.set(control);
-        Future<?> worker = executor.submit(() -> {
-            Path recordingsDir = config.recordingDirectory();
-            Path outputPath = generateOutputPath(recordingsDir);
-            runningOutputPath.set(outputPath);
-            boolean captureCompleted = false;
-            try {
+        try {
+            run.worker = executor.submit(() -> executeRun(run, progressListener));
+        } catch (RuntimeException error) {
+            activeRun.compareAndSet(run, null);
+            throw error;
+        }
+        run.future.whenComplete((result, error) -> {
+            if (run.future.isCancelled()) {
+                run.control.requestStop();
+                activeRun.compareAndSet(run, null);
+                Future<?> worker = run.worker;
+                if (worker != null) {
+                    worker.cancel(true);
+                }
+            }
+        });
+        if (run.future.isCancelled()) {
+            run.worker.cancel(true);
+        }
+        return run.future;
+    }
+
+    private void executeRun(RunState run, CaptureProgressListener progressListener) {
+        Path outputPath = null;
+        boolean captureCompleted = false;
+        boolean cancelled = false;
+        RecordingResult result = null;
+        Throwable failure = null;
+        try {
+            outputPath = generateOutputPath(config.recordingDirectory());
+            if (run.future.isCancelled() || Thread.currentThread().isInterrupted()) {
+                cancelled = true;
+            } else {
                 Path captured = captureService.captureToFile(
                         outputPath,
                         config.recordingDuration(),
                         progressListener,
-                        control
+                        run.control
                 );
-                if (future.isCancelled() || Thread.currentThread().isInterrupted()) {
-                    deletePartialRecording(captured);
-                    return;
-                }
                 captureCompleted = true;
-                FileUploadResult upload = upload(captured);
-                if (future.isCancelled() || Thread.currentThread().isInterrupted()) {
-                    return;
-                }
-                RecordingResult result = new RecordingResult(
-                        captured,
-                        config.isUploadEnabled(),
-                        upload.remotePath(),
-                        upload.sizeBytes()
-                );
-                running.set(false);
-                future.complete(result);
-            } catch (Exception e) {
-                running.set(false);
-                if (future.isCancelled() || Thread.currentThread().isInterrupted()) {
-                    if (!captureCompleted) {
-                        deletePartialRecording(outputPath);
-                    }
-                    future.cancel(true);
+                if (run.future.isCancelled() || Thread.currentThread().isInterrupted()) {
+                    cancelled = true;
                 } else {
-                    future.completeExceptionally(new IllegalStateException("Recording cycle failed", e));
-                }
-            } finally {
-                runningOutputPath.compareAndSet(outputPath, null);
-                runningControl.compareAndSet(control, null);
-                running.set(false);
-            }
-        });
-        runningWorker.set(worker);
-        future.whenComplete((result, error) -> {
-            Future<?> completedWorker = runningWorker.get();
-            if (future.isCancelled()) {
-                if (completedWorker != null) {
-                    completedWorker.cancel(true);
+                    FileUploadResult upload = upload(captured);
+                    if (run.future.isCancelled() || Thread.currentThread().isInterrupted()) {
+                        cancelled = true;
+                    } else {
+                        result = new RecordingResult(
+                                captured,
+                                config.isUploadEnabled(),
+                                upload.remotePath(),
+                                upload.sizeBytes()
+                        );
+                    }
                 }
             }
-            runningTask.compareAndSet(future, null);
-            runningWorker.compareAndSet(completedWorker, null);
-        });
-        return future;
+        } catch (Exception error) {
+            if (run.future.isCancelled() || Thread.currentThread().isInterrupted()) {
+                if (!captureCompleted) {
+                    deletePartialRecording(outputPath);
+                }
+                cancelled = true;
+            } else {
+                failure = new IllegalStateException("Recording cycle failed", error);
+            }
+        }
+
+        activeRun.compareAndSet(run, null);
+        if (cancelled) {
+            run.future.cancel(true);
+        } else if (failure != null) {
+            run.future.completeExceptionally(failure);
+        } else {
+            run.future.complete(result);
+        }
     }
 
     /**
@@ -157,32 +170,24 @@ public class RecordingCoordinator {
      * This is best-effort and keeps API consumers informed through cancellation.
      */
     public void requestStop() {
-        CompletableFuture<RecordingResult> task = runningTask.get();
-        if (task == null) {
+        RunState run = activeRun.get();
+        if (run == null) {
             return;
         }
-        RecordingControl control = runningControl.get();
-        if (control != null) {
-            control.requestStop();
-        }
-        task.cancel(true);
-        Future<?> worker = runningWorker.getAndSet(null);
-        if (worker != null) {
-            worker.cancel(true);
-        }
-        running.set(false);
+        run.control.requestStop();
+        run.future.cancel(true);
     }
 
     public void togglePause() {
-        RecordingControl control = runningControl.get();
-        if (control != null) {
-            control.togglePause();
+        RunState run = activeRun.get();
+        if (run != null) {
+            run.control.togglePause();
         }
     }
 
     public boolean isPaused() {
-        RecordingControl control = runningControl.get();
-        return control != null && control.isPaused();
+        RunState run = activeRun.get();
+        return run != null && run.control.isPaused();
     }
 
     /**
@@ -200,7 +205,7 @@ public class RecordingCoordinator {
     }
 
     public boolean isRunning() {
-        return running.get();
+        return activeRun.get() != null;
     }
 
     /**
@@ -221,5 +226,12 @@ public class RecordingCoordinator {
         } catch (IOException e) {
             logger.warn("Could not delete partial recording {}", outputPath, e);
         }
+    }
+
+    /** Keeps cancellation and cleanup scoped to the run that created each resource. */
+    private static final class RunState {
+        private final CompletableFuture<RecordingResult> future = new CompletableFuture<>();
+        private final RecordingControl control = new RecordingControl();
+        private volatile Future<?> worker;
     }
 }

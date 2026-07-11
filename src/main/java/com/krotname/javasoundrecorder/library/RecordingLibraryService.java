@@ -4,7 +4,6 @@ import com.krotname.javasoundrecorder.metadata.RecordingMetadataStore;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.time.Duration;
 import java.util.Comparator;
 import java.util.List;
@@ -36,9 +35,29 @@ public class RecordingLibraryService {
 
     public RecordingEntry rename(RecordingEntry entry, String requestedName) throws IOException {
         String fileName = ensureWavExtension(sanitizeFileName(requestedName));
-        Path target = entry.path().resolveSibling(fileName);
-        Path renamed = Files.move(entry.path(), target, StandardCopyOption.ATOMIC_MOVE);
-        moveSidecar(entry.path(), renamed);
+        Path source = entry.path();
+        Path target = source.resolveSibling(fileName);
+        if (source.equals(target)) {
+            return entry(source);
+        }
+
+        Path sourceSidecar = RecordingMetadataStore.sidecarPath(source);
+        Path targetSidecar = RecordingMetadataStore.sidecarPath(target);
+        if (Files.exists(targetSidecar)) {
+            throw new java.nio.file.FileAlreadyExistsException(targetSidecar.toString());
+        }
+
+        Path renamed = Files.move(source, target);
+        try {
+            moveSidecar(sourceSidecar, targetSidecar);
+        } catch (IOException sidecarError) {
+            try {
+                Files.move(renamed, source);
+            } catch (IOException rollbackError) {
+                sidecarError.addSuppressed(rollbackError);
+            }
+            throw sidecarError;
+        }
         return entry(renamed);
     }
 
@@ -101,11 +120,10 @@ public class RecordingLibraryService {
         return fileName + WAV_EXTENSION;
     }
 
-    private void moveSidecar(Path source, Path target) throws IOException {
-        Path sourceSidecar = RecordingMetadataStore.sidecarPath(source);
+    private void moveSidecar(Path sourceSidecar, Path targetSidecar) throws IOException {
         if (!Files.exists(sourceSidecar)) {
             return;
         }
-        Files.move(sourceSidecar, RecordingMetadataStore.sidecarPath(target), StandardCopyOption.REPLACE_EXISTING);
+        Files.move(sourceSidecar, targetSidecar);
     }
 }

@@ -4,6 +4,13 @@
 ### Added
 - Real FlatLaf UI screenshots (idle, recording, settings) embedded in `README`, `README.en`, and `docs/USAGE`.
 
+### Fixed
+- Prevented recording rename from overwriting an existing WAV file.
+- Prevented rename from attaching or overwriting an orphaned metadata sidecar and roll back the WAV move if sidecar migration fails.
+- Isolated each asynchronous recording run so cleanup from a cancelled run cannot reset a replacement run.
+- Preserved a completed WAV when cancellation happens during the subsequent upload.
+- Ensured setup failures complete their future and release the active-run state before observers resume.
+
 ## 1.3.0 - 2026-07-02
 ### Added
 - FlatLaf 3.7.1 dependency and a `ModernLookAndFeel` installer with UI regression coverage.
