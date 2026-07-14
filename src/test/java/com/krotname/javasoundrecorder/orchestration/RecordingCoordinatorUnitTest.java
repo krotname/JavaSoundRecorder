@@ -77,6 +77,35 @@ class RecordingCoordinatorUnitTest {
     }
 
     @Test
+    void cancelledRunCannotResetReplacementRunState(@TempDir Path workspace) throws Exception {
+        AppConfig config = AppConfig.from(envWithDirectory(workspace));
+        DelayedCancellationCaptureService capture = new DelayedCancellationCaptureService();
+        RecordingCoordinator coordinator = new RecordingCoordinator(
+                config,
+                capture,
+                new FakeUploader(),
+                new FileNameGenerator()
+        );
+
+        CompletableFuture<RecordingResult> first = coordinator.runOneShotAsync();
+        capture.awaitFirstStarted();
+        coordinator.requestStop();
+        assertThrows(CancellationException.class, first::join);
+        capture.awaitFirstInterrupted();
+
+        CompletableFuture<RecordingResult> second = coordinator.runOneShotAsync();
+        capture.releaseFirst();
+        capture.awaitSecondStarted();
+
+        assertTrue(coordinator.isRunning());
+        assertThrows(IllegalStateException.class, coordinator::runOneShotAsync);
+
+        capture.finishSecond();
+        assertEquals(4, second.join().bytes());
+        assertEquals(false, coordinator.isRunning());
+    }
+
+    @Test
     void requestStopCanBeCalledWithoutActiveSession() {
         AppConfig config = AppConfig.from(envWithToken());
         RecordingCoordinator coordinator = new RecordingCoordinator(config, new FakeCaptureService(), new FakeUploader(), new FileNameGenerator());
@@ -100,6 +129,36 @@ class RecordingCoordinatorUnitTest {
         assertNotEquals(first.recordingPath(), second.recordingPath());
         assertEquals(false, coordinator.isRunning());
         assertEquals(4, second.bytes());
+    }
+
+    @Test
+    void namingFailureCompletesFutureAndReleasesCoordinator() {
+        AppConfig config = AppConfig.from(envWithToken());
+        AtomicBoolean failNextName = new AtomicBoolean(true);
+        FileNameGenerator generator = new FileNameGenerator() {
+            @Override
+            public String next(String prefix) {
+                if (failNextName.getAndSet(false)) {
+                    throw new IllegalStateException("Name generation failed");
+                }
+                return super.next(prefix);
+            }
+        };
+        RecordingCoordinator coordinator = new RecordingCoordinator(
+                config,
+                new FakeCaptureService(),
+                new FakeUploader(),
+                generator
+        );
+
+        CompletionException failure = assertThrows(
+                CompletionException.class,
+                () -> coordinator.runOneShotAsync().join()
+        );
+
+        assertInstanceOf(IllegalStateException.class, failure.getCause());
+        assertEquals(false, coordinator.isRunning());
+        assertEquals(4, coordinator.runOneShotAsync().join().bytes());
     }
 
     @Test
@@ -160,6 +219,27 @@ class RecordingCoordinatorUnitTest {
         capture.awaitInterrupted();
         awaitDeleted(partial);
         assertEquals(false, coordinator.isRunning());
+    }
+
+    @Test
+    void requestStopDuringUploadPreservesCompletedRecording(@TempDir Path workspace) throws Exception {
+        AppConfig config = AppConfig.from(envWithDirectory(workspace));
+        BlockingUploader uploader = new BlockingUploader();
+        RecordingCoordinator coordinator = new RecordingCoordinator(
+                config,
+                new FakeCaptureService(),
+                uploader,
+                new FileNameGenerator()
+        );
+
+        CompletableFuture<RecordingResult> future = coordinator.runOneShotAsync();
+        Path completedRecording = uploader.awaitStarted();
+
+        coordinator.requestStop();
+
+        assertThrows(CancellationException.class, future::join);
+        uploader.awaitInterrupted();
+        assertEquals("data", Files.readString(completedRecording, StandardCharsets.UTF_8));
     }
 
     @Test
@@ -357,6 +437,82 @@ class RecordingCoordinatorUnitTest {
         }
     }
 
+    private static final class DelayedCancellationCaptureService implements AudioCaptureService {
+        private final AtomicInteger invocations = new AtomicInteger();
+        private final CountDownLatch firstStarted = new CountDownLatch(1);
+        private final CountDownLatch firstInterrupted = new CountDownLatch(1);
+        private final CountDownLatch releaseFirst = new CountDownLatch(1);
+        private final CountDownLatch secondStarted = new CountDownLatch(1);
+        private final CountDownLatch finishSecond = new CountDownLatch(1);
+
+        @Override
+        public Path captureToFile(Path outputFile, Duration maxDuration) throws IOException {
+            if (invocations.incrementAndGet() == 1) {
+                firstStarted.countDown();
+                try {
+                    Thread.sleep(maxDuration.toMillis());
+                } catch (InterruptedException error) {
+                    firstInterrupted.countDown();
+                    awaitIgnoringInterrupts(releaseFirst);
+                    Thread.currentThread().interrupt();
+                    throw new IOException("First capture interrupted", error);
+                }
+                throw new IOException("First capture was not interrupted");
+            }
+
+            secondStarted.countDown();
+            try {
+                await(finishSecond, "Second capture did not finish");
+            } catch (InterruptedException error) {
+                Thread.currentThread().interrupt();
+                throw new IOException("Second capture interrupted", error);
+            }
+            Files.createDirectories(outputFile.getParent());
+            Files.write(outputFile, "data".getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE_NEW);
+            return outputFile;
+        }
+
+        void awaitFirstStarted() throws InterruptedException {
+            await(firstStarted, "First capture did not start");
+        }
+
+        void awaitFirstInterrupted() throws InterruptedException {
+            await(firstInterrupted, "First capture was not interrupted");
+        }
+
+        void releaseFirst() {
+            releaseFirst.countDown();
+        }
+
+        void awaitSecondStarted() throws InterruptedException {
+            await(secondStarted, "Second capture did not start");
+        }
+
+        void finishSecond() {
+            finishSecond.countDown();
+        }
+
+        private void await(CountDownLatch latch, String failureMessage) throws InterruptedException {
+            if (!latch.await(2, TimeUnit.SECONDS)) {
+                throw new InterruptedException(failureMessage);
+            }
+        }
+
+        private void awaitIgnoringInterrupts(CountDownLatch latch) throws IOException {
+            long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(2);
+            while (System.nanoTime() < deadline) {
+                try {
+                    if (latch.await(deadline - System.nanoTime(), TimeUnit.NANOSECONDS)) {
+                        return;
+                    }
+                } catch (InterruptedException ignored) {
+                    // Cancellation may interrupt more than once while the first worker unwinds.
+                }
+            }
+            throw new IOException("First capture was not released");
+        }
+    }
+
     private static final class PauseAwareCaptureService implements AudioCaptureService {
         private final CountDownLatch started = new CountDownLatch(1);
         private final CountDownLatch paused = new CountDownLatch(1);
@@ -420,6 +576,39 @@ class RecordingCoordinatorUnitTest {
         @Override
         public com.krotname.javasoundrecorder.model.FileUploadResult upload(Path file) throws IOException {
             throw new IOException("Upload failed");
+        }
+    }
+
+    private static final class BlockingUploader implements UploadService {
+        private final CountDownLatch started = new CountDownLatch(1);
+        private final CountDownLatch interrupted = new CountDownLatch(1);
+        private volatile Path file;
+
+        @Override
+        public com.krotname.javasoundrecorder.model.FileUploadResult upload(Path file) throws IOException {
+            this.file = file;
+            started.countDown();
+            try {
+                Thread.sleep(TimeUnit.SECONDS.toMillis(10));
+            } catch (InterruptedException error) {
+                Thread.currentThread().interrupt();
+                interrupted.countDown();
+                throw new IOException("Upload interrupted", error);
+            }
+            throw new IOException("Upload was not interrupted");
+        }
+
+        Path awaitStarted() throws InterruptedException {
+            if (!started.await(2, TimeUnit.SECONDS)) {
+                throw new InterruptedException("Upload did not start");
+            }
+            return file;
+        }
+
+        void awaitInterrupted() throws InterruptedException {
+            if (!interrupted.await(2, TimeUnit.SECONDS)) {
+                throw new InterruptedException("Upload was not interrupted");
+            }
         }
     }
 

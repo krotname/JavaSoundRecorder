@@ -7,6 +7,7 @@ import com.krotname.javasoundrecorder.metadata.RecordingMetadata;
 import com.krotname.javasoundrecorder.metadata.RecordingMetadataStore;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
@@ -62,6 +63,55 @@ class RecordingLibraryServiceTest {
 
         assertThrows(IllegalArgumentException.class, () -> service.rename(entry, "../bad"));
         assertThrows(IllegalArgumentException.class, () -> service.rename(entry, " "));
+    }
+
+    @Test
+    void renameDoesNotOverwriteExistingRecording(@TempDir Path workspace) throws IOException {
+        Path source = workspace.resolve("source.wav");
+        Path existing = workspace.resolve("existing.wav");
+        Files.writeString(source, "source", StandardCharsets.UTF_8);
+        Files.writeString(existing, "existing", StandardCharsets.UTF_8);
+        RecordingEntry entry = service.list(workspace).stream()
+                .filter(candidate -> candidate.path().equals(source))
+                .findFirst()
+                .orElseThrow();
+
+        assertThrows(
+                FileAlreadyExistsException.class,
+                () -> service.rename(entry, existing.getFileName().toString())
+        );
+
+        assertEquals("source", Files.readString(source, StandardCharsets.UTF_8));
+        assertEquals("existing", Files.readString(existing, StandardCharsets.UTF_8));
+    }
+
+    @Test
+    void renameDoesNotAttachOrOverwriteOrphanedTargetMetadata(@TempDir Path workspace) throws IOException {
+        Path source = write(workspace.resolve("source.wav"));
+        RecordingMetadataStore metadataStore = new RecordingMetadataStore();
+        metadataStore.save(source, new RecordingMetadata("Source", "Artist", "Comment"));
+        Path target = workspace.resolve("target.wav");
+        Path targetSidecar = RecordingMetadataStore.sidecarPath(target);
+        Files.writeString(targetSidecar, "orphan-metadata", StandardCharsets.UTF_8);
+        RecordingEntry entry = service.list(workspace).get(0);
+
+        assertThrows(FileAlreadyExistsException.class, () -> service.rename(entry, "target"));
+
+        assertEquals(true, Files.exists(source));
+        assertEquals(false, Files.exists(target));
+        assertEquals("Source", metadataStore.read(source).title());
+        assertEquals("orphan-metadata", Files.readString(targetSidecar, StandardCharsets.UTF_8));
+    }
+
+    @Test
+    void renamingToCurrentNameIsANoOp(@TempDir Path workspace) throws IOException {
+        Path source = write(workspace.resolve("source.wav"));
+        RecordingEntry entry = service.list(workspace).get(0);
+
+        RecordingEntry unchanged = service.rename(entry, "source");
+
+        assertEquals(source, unchanged.path());
+        assertEquals(true, Files.exists(source));
     }
 
     @Test
