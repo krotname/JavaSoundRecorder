@@ -99,7 +99,9 @@ public class RecordingLibraryService {
     }
 
     private boolean isWav(Path path) {
-        return path.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(WAV_EXTENSION);
+        Path fileName = path.getFileName();
+        return fileName != null
+                && fileName.toString().toLowerCase(Locale.ROOT).endsWith(WAV_EXTENSION);
     }
 
     private String sanitizeFileName(String requestedName) {
