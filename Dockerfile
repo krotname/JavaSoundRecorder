@@ -1,4 +1,4 @@
-FROM eclipse-temurin:21-jre-jammy@sha256:d63bd8d9b171999cbed8576f2c76e874dd4856791a358536e5c4d407e77edc13 AS runtime
+FROM eclipse-temurin:21-jre-jammy@sha256:3097cbbebb7d490494a98aed2301f284b38f79eba158eef098c6fc8c8af11c23 AS runtime
 
 WORKDIR /app
 COPY target/javasoundrecorder-*-all.jar /app/javasoundrecorder.jar
