@@ -64,3 +64,4 @@ jobs:
           name: openssf-scorecard
           path: scorecard-results.json
           if-no-files-found: error
+          retention-days: 7

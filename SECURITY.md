@@ -22,14 +22,14 @@ For suspected credential leakage:
 - GitHub Actions workflows use scoped token permissions, explicit job timeouts, and non-persistent checkout credentials.
 - GitHub Actions workflow files are linted with actionlint before merge.
 - Default branch governance and required checks are documented in `docs/GOVERNANCE.md`.
-- SBOM is generated during package/release and versioned as `javasoundrecorder-1.0.0-sbom.json/xml`.
+- SBOM is generated during package/release and versioned as `javasoundrecorder-1.3.1-sbom.json/xml`.
 - Release artifacts include SHA-256 checksums and GitHub artifact attestations for provenance and SBOM verification.
 
-## Maintenance expectations
+## Maintenance status
 
-- Security fixes are prioritized over feature work.
-- Compatibility-breaking changes must include a migration note.
-- All fixes to storage/network code paths should include regression tests.
+- Version 1.3.1 is the final release, and the repository is archived as read-only.
+- Active maintenance and guaranteed security fixes have ended.
+- Fork the repository before proposing or applying further changes.
 
 ## Secrets
 - Do not commit tokens, access keys, or credentials.
