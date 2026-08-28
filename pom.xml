@@ -35,7 +35,7 @@
     <shade.version>3.6.2</shade.version>
     <checkstyle.plugin.version>3.6.0</checkstyle.plugin.version>
     <enforcer.version>3.6.3</enforcer.version>
-    <checkstyle.dep.version>13.10.0</checkstyle.dep.version>
+    <checkstyle.dep.version>14.0.0</checkstyle.dep.version>
     <cyclonedx.version>2.9.3</cyclonedx.version>
     <archunit.version>1.5.0</archunit.version>
     <spotbugs.version>4.10.4.0</spotbugs.version>
