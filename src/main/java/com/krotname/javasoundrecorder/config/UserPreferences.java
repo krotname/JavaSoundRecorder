@@ -2,6 +2,7 @@ package com.krotname.javasoundrecorder.config;
 
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.Objects;
 import java.util.Optional;
 
 public record UserPreferences(
@@ -10,10 +11,10 @@ public record UserPreferences(
         Optional<Boolean> uploadEnabled,
         Optional<String> audioInputName) {
     public UserPreferences {
-        recordingDuration = recordingDuration == null ? Optional.empty() : recordingDuration;
-        recordingDirectory = recordingDirectory == null ? Optional.empty() : recordingDirectory;
-        uploadEnabled = uploadEnabled == null ? Optional.empty() : uploadEnabled;
-        audioInputName = audioInputName == null ? Optional.empty() : audioInputName.map(String::trim)
+        recordingDuration = Objects.requireNonNull(recordingDuration, "recordingDuration");
+        recordingDirectory = Objects.requireNonNull(recordingDirectory, "recordingDirectory");
+        uploadEnabled = Objects.requireNonNull(uploadEnabled, "uploadEnabled");
+        audioInputName = Objects.requireNonNull(audioInputName, "audioInputName").map(String::trim)
                 .filter(value -> !value.isEmpty());
     }
 

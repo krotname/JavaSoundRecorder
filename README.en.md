@@ -2,6 +2,9 @@
 
 [Russian](README.md)
 
+> **Project status:** version 1.3.1 is the final release. The repository is preserved as read-only;
+> active maintenance has ended.
+
 
 JavaSoundRecorder is a Java 21 desktop project for microphone audio recording. It demonstrates clean layering, reproducible builds, multi-level tests, CI, coverage, and supply-chain quality gates.
 

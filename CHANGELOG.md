@@ -1,8 +1,13 @@
 # Changelog
 
-## Unreleased
+## 1.3.1 - 2026-08-28
 ### Added
 - Real FlatLaf UI screenshots (idle, recording, settings) embedded in `README`, `README.en`, and `docs/USAGE`.
+
+### Changed
+- Updated Jackson Core to 2.22.2 and the SpotBugs Maven plugin to 4.10.4.0.
+- Limited OSSF Scorecard artifact retention to seven days.
+- Marked 1.3.1 as the final release before repository archival.
 
 ### Fixed
 - Prevented recording rename from overwriting an existing WAV file.
@@ -10,6 +15,8 @@
 - Isolated each asynchronous recording run so cleanup from a cancelled run cannot reset a replacement run.
 - Preserved a completed WAV when cancellation happens during the subsequent upload.
 - Ensured setup failures complete their future and release the active-run state before observers resume.
+- Closed the audio stream and clip when playback cannot start.
+- Rejected invalid null `Optional` components in user preferences.
 
 ## 1.3.0 - 2026-07-02
 ### Added

@@ -2,6 +2,9 @@
 
 [English](README.en.md)
 
+> **Статус проекта:** версия 1.3.1 — финальный релиз. Репозиторий сохранён только для чтения;
+> активная поддержка завершена.
+
 [![CI](https://github.com/krotname/JavaSoundRecorder/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/krotname/JavaSoundRecorder/actions/workflows/ci.yml?query=branch%3Amaster)
 [![CodeQL](https://github.com/krotname/JavaSoundRecorder/actions/workflows/codeql.yml/badge.svg?branch=master)](https://github.com/krotname/JavaSoundRecorder/actions/workflows/codeql.yml?query=branch%3Amaster)
 [![Coverage](https://codecov.io/gh/krotname/JavaSoundRecorder/branch/master/graph/badge.svg)](https://codecov.io/gh/krotname/JavaSoundRecorder)
